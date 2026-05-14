@@ -1,0 +1,23 @@
+# Node
+node_modules/
+package-lock.json
+npm-debug.log*
+
+# Build outputs / generated files
+*.docx
+*.pdf
+*.png
+!examples/**/*.png
+!examples/**/*.pdf
+
+# OS / editor
+.DS_Store
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Local working directories
+/scratch/
+/output/
