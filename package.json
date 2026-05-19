@@ -1,0 +1,15 @@
+{
+  "name": "resume-screener-loop",
+  "version": "1.1.0",
+  "description": "An adversarial self-review loop skill for resume tailoring, now with automated anti-pattern linting and PDF compilation.",
+  "main": "templates/lib.js",
+  "scripts": {
+    "build": "node scripts/build-resume.js",
+    "lint": "node scripts/build-resume.js --lint-only"
+  },
+  "dependencies": {
+    "docx": "^8.5.0"
+  },
+  "author": "flowmar47",
+  "license": "MIT"
+}

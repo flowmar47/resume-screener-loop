@@ -50,23 +50,24 @@ For Anthropic's main Claude products, this skill currently runs in environments 
 You can also use this as a workflow reference outside the skill system. The methodology, templates, and reference docs are usable directly:
 
 ```bash
-# Set up a working directory
-mkdir my_resume_project && cd my_resume_project
+# In the repository root, install dependencies:
+npm install
+
+# Set up your working directory
+mkdir resumes && cd resumes
 
 # Copy the templates
-cp /path/to/resume-screener-loop/templates/lib.js .
-cp /path/to/resume-screener-loop/templates/content-template.js ./content.js
-cp /path/to/resume-screener-loop/templates/resume-template.js ./build_target_role.js
+cp ../templates/lib.js .
+cp ../templates/content-template.js ./content.js
+cp ../templates/resume-template.js ./build_target_role.js
 
-# Install docx-js
-npm install docx --global
+# Edit content.js and build_target_role.js with your material
 
-# Edit content.js with your actual material
-# Edit build_target_role.js with the role-specific composition
-
-# Build
-NODE_PATH=$(npm root -g) node build_target_role.js
+# Run the automated build & anti-pattern linter
+node ../scripts/build-resume.js
 ```
+
+This tool automatically runs the static linter for anti-patterns (em-dashes and AI clichés like "leveraged"), compiles the `.docx` resume, converts it to `.pdf` using headless LibreOffice, verifies the 1-2 page count limit using `pdfinfo`, and generates a visual `.png` page preview.
 
 See [`templates/README.md`](templates/README.md) for the full build pipeline.
 

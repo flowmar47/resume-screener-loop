@@ -79,6 +79,17 @@ Banned phrasing categories:
 - Specific action verbs: built, designed, implemented, maintained, coordinated, operated, architected, deployed, debugged, evaluated, integrated, owned, shipped
 - Specific outcomes (without fabricated numbers): "ran unattended", "consistent delivery", "long-term retention", "zero safety incidents"
 - Honest qualifiers: "production", "paying subscribers", "multi-source", "daily automated"
+## AI-generated clichés: banned
+
+Screeners in 2026 are highly sensitive to AI-generated writing patterns, which make a resume look low-effort and generic. The following empty prose and AI filler words are banned:
+
+- **Filler action words**: "leveraged", "delved", "fostered", "pioneered", "orchestrated" (when used vaguely).
+- **Prose clichés**: "tapestry", "beacon of", "testament to", "rich landscape", "pivotal role".
+- **Empty verbs**: "streamlined", "spearheaded" (unless followed immediately by a concrete, verifiable outcome).
+
+**Preferred substitutes:**
+- Use precise, low-ego action verbs: **built**, **operated**, **designed**, **engineered**, **optimized**, **debugged**, **maintained**.
+- Describe the mechanism: instead of "leveraged FastAPI to streamline data ingestion", use "built data ingestion pipelines using FastAPI".
 
 ## Buzzword stacking: discouraged
 
@@ -136,6 +147,7 @@ For startup / SaaS roles, "multi-million-dollar" can read as enterprise-overbuil
 - [ ] No em dashes anywhere (search the output)
 - [ ] No fabricated percentages, dollar figures, or counts
 - [ ] No "world-class", "passionate about", "thrilled to", or similar
+- [ ] No AI-generated filler words or clichés ("leveraged", "delved", "tapestry", etc.)
 - [ ] No claims of ML research the candidate hasn't done
 - [ ] No "AI expert" or self-awarded titles
 - [ ] No more than two "Founder" titles in a row

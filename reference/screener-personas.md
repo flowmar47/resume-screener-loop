@@ -174,6 +174,74 @@ Companies: Google, Meta, Microsoft, Apple (engineering org), Amazon.
 
 **Verdict language:** "Forward to engineering manager" / "Borderline, fundamentals interview will probe" / "Pass, no CS-fundamentals signal".
 
+## Quantitative finance / HFT engineer
+
+Companies: Jane Street, Citadel, Hudson River Trading (HRT), Jump Trading, Optiver, DRW.
+
+**Bar:**
+- Extreme low-latency system development (C++, FPGA, assembly).
+- Solid computer science fundamentals (lock-free programming, cache locality, network protocols).
+- Deep operating system knowledge (Linux kernel optimization, socket programming, CPU pinning).
+- Strong mathematical, statistical, or physics background.
+
+**What trips them up:**
+- Vague high-level frameworks (Python, JS, Django) claiming performance without low-level mechanics.
+- Buzzword-heavy cloud orchestration (Kubernetes, AWS) when they need bare-metal optimization.
+- "AI/ML expert" marketing language on a core systems engineering role.
+- Vague metrics without specific measurements (e.g., "fast speed" vs "sub-microsecond latency").
+
+**What lands:**
+- Real low-latency metrics: "optimized C++ socket handler reducing latency from 1.2μs to 850ns at the 99th percentile".
+- Detailed hardware-level optimization: FPGA kernel programming, SIMD instruction optimizations, lock-free queue designs.
+- Production bare-metal Linux tuning: kernel bypass, zero-copy networking (Solarflare, DPDK).
+- Proven performance under high-volatility events.
+
+**Verdict language:** "Forward, outstanding low-level systems depth" / "Forward, math background matches, screen for C++" / "Pass, too high-level, lacks system internals".
+
+## Health-tech & regulated clinical systems PM
+
+Companies: Flatiron Health, Veeva Systems, Epic Systems, Tempus, clinical trial platforms, health insurance startups.
+
+**Bar:**
+- Direct engagement with healthcare regulations (HIPAA, FDA CFR Part 11, SOC2 Type II).
+- Standardized health data integrations (HL7, FHIR, Epic App Orchard, Cerner APIs).
+- Clinical workflow empathy (understanding physicians, nurses, clinical trials coordinators).
+- Data privacy, governance, and audit logging rigor.
+
+**What trips them up:**
+- Pure commercial PM resume with no regulatory or clinical bridge.
+- Vague security claims without naming compliance standards (HIPAA, SOC2).
+- Lack of clinical data pipeline vocabulary.
+
+**What lands:**
+- FHIR API integrations: "implemented custom FHIR adapters to stream real-world clinical data from major EHR networks".
+- Regulated releases: "shepherded clinical decision support platform through FDA 510(k) clearance process".
+- Direct clinical collaboration: "partnered with principal investigators and physicians to redesign clinical trial enrollment interfaces".
+
+**Verdict language:** "Forward, exceptional HIPAA/FHIR compliance depth" / "Borderline, healthcare exposure is shallow" / "Pass, lacks regulated-industry experience".
+
+## Platform / DevOps & SRE infrastructure architect
+
+Companies: HashiCorp, AWS, GCP, GitLab, Netflix, large enterprise infrastructure teams.
+
+**Bar:**
+- Infrastructure as Code (IaC) discipline at massive scale.
+- High-availability design patterns (multi-region active-active, zero-downtime migrations).
+- Rigorous observability systems (SLO/SLA, Prometheus, Grafana, OpenTelemetry).
+- Disaster recovery automation and incident response discipline (runbooks, post-mortems).
+
+**What trips them up:**
+- SRE candidate with purely manual operations ("configured servers via AWS Web Console").
+- Vague "maintained uptime" without quantitative SLAs, error budgets, or post-mortem culture.
+- Vague platform tooling mentions without specific architectural ownership.
+
+**What lands:**
+- Concrete infrastructure scale: "managed Terraform codebase provisioning 1,500+ AWS nodes across 3 regions".
+- High-reliability achievements: "engineered blue-green deployment pipelines that eliminated downtime for 50M+ requests/day".
+- Observability and response: "established SLO alerts that reduced MTTR by 40% through automated runbook triggers".
+
+**Verdict language:** "Forward, world-class infrastructure engineering chops" / "Borderline, verify IaC discipline in technical round" / "Reject, manual operator rather than platform automation builder".
+
 ## Generalist startup / mid-size company recruiter
 
 Sometimes the JD doesn't fit a clean archetype. When you can't tell, default to a generalist screener with this bar:

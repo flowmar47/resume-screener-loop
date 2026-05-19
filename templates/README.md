@@ -12,9 +12,11 @@ These are the reusable build blocks the skill uses to produce DOCX output.
 
 This pipeline assumes Node.js and a couple of npm packages.
 
+You can install all necessary dependencies locally using the root `package.json`:
+
 ```bash
-# In your working directory
-npm install docx --global       # or local; either works
+# In the skill root directory
+npm install
 ```
 
 For DOCX→PDF conversion (page count verification and visual spot-check), you also need LibreOffice headless:
@@ -27,33 +29,39 @@ apt-get install libreoffice
 brew install --cask libreoffice
 ```
 
-## Build pipeline
+## Automated Build & Anti-Pattern Linter Pipeline
 
-Pattern for building one resume:
+We provide a built-in automated build utility in the root `scripts/build-resume.js` that checks for anti-patterns and compiles your resume.
 
+### How to use it:
+
+1. **Create a working folder and copy templates**:
+   ```bash
+   mkdir resumes && cd resumes
+   cp /path/to/skill/templates/lib.js .
+   cp /path/to/skill/templates/content-template.js ./content.js
+   cp /path/to/skill/templates/resume-template.js ./build_my_role.js
+   ```
+
+2. **Edit `content.js` and `build_my_role.js`** with your candidate information.
+
+3. **Run the automated lint & compile**:
+   ```bash
+   # From your working folder, run:
+   node /path/to/skill/scripts/build-resume.js
+   ```
+
+This tool will automatically:
+- **Lint** your source files (`content.js` and `build_*.js`) for anti-patterns (em-dashes, double-hyphens, and AI clichés like "leveraged", "delved", or "tapestry").
+- **Compile** the DOCX file.
+- **Convert** the DOCX to PDF using headless LibreOffice.
+- **Verify** the page count using `pdfinfo` and warn you if the resume is longer than 2 pages.
+- **Render** a PNG preview of the first page using `pdftoppm`.
+
+To run *only* the anti-pattern check without building:
 ```bash
-# Make a working directory
-mkdir resumes && cd resumes
-
-# Copy the templates
-cp /path/to/skill/templates/lib.js .
-cp /path/to/skill/templates/content-template.js ./content.js
-cp /path/to/skill/templates/resume-template.js ./build_target_role.js
-
-# Edit content.js with the candidate's actual experience
-# Edit build_target_role.js with the role-specific composition
-
-# Build
-NODE_PATH=$(npm root -g) node build_target_role.js
-# Wrote: /path/to/output/Resume_FirstLast_RoleName.docx
+node /path/to/skill/scripts/build-resume.js --lint-only
 ```
-
-For multiple resumes (batch tailoring), create one `build_*.js` script per target role and run them in sequence:
-
-```bash
-for f in build_*.js; do
-  NODE_PATH=$(npm root -g) node "$f"
-done
 ```
 
 ## DOCX to PDF (for page count verification)
