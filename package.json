@@ -1,11 +1,12 @@
 {
   "name": "resume-screener-loop",
-  "version": "1.1.0",
-  "description": "An adversarial self-review loop skill for resume tailoring, now with automated anti-pattern linting and PDF compilation.",
+  "version": "2.0.0",
+  "description": "Adversarial resume tailoring skill: gap scorecard, ATS pass, screener loop, automated linting and DOCX build.",
   "main": "templates/lib.js",
   "scripts": {
     "build": "node scripts/build-resume.js",
-    "lint": "node scripts/build-resume.js --lint-only"
+    "lint": "node scripts/build-resume.js --lint-only",
+    "check-keywords": "node scripts/check-keywords.js"
   },
   "dependencies": {
     "docx": "^8.5.0"

@@ -1,6 +1,8 @@
 # Walkthrough: A Full Loop, End to End
 
-A worked example of the four-phase workflow on a single role. The candidate and company are fictional; only the methodology is real.
+A worked example of the resume-screener-loop workflow on a single role. The candidate and company are fictional; only the methodology is real.
+
+**Phases covered:** 0 (confirm inputs) → 1 (ingest + fit + gap scorecard) → 1.5 (skipped here; no 🟡 gaps after user confirms workshops) → 2 (draft + ATS pass + build) → 3 (screener) → 4 (revise + deliver).
 
 ## The setup
 
@@ -53,9 +55,9 @@ Read the JD in full. Extract:
 
 **Fit: Moderate-strong.** Strong on production AI credibility and customer-facing background; weak on public technical writing.
 
-State the fit assessment to Avery before drafting:
+State the fit assessment and gap scorecard to Avery before drafting:
 
-> Your fit on this role is moderate-strong. You meet the 5+ years required experience cleanly via PM and consulting, your financial-alerts product is exactly the kind of production AI credibility this role needs, and your customer-facing background lands. The weakest signal is public technical writing; no OpenAI Cookbook contributions or open-source AI work is on the resume currently. I'll draft accordingly. If you have any technical writing I missed, send it now.
+> **Fit: moderate-strong.** You meet 5+ years via PM and consulting; production AI credibility is strong. **Gap scorecard must-haves:** ✅ technical customer-facing, ✅ production agentic system, 🟡 large workshops (internal only), ❌ public Cookbook-style writing. I'll draft to foreground the product and consulting; workshops need a discovery answer if you've run any. Proceed?
 
 ## Phase 2: Tailored draft
 

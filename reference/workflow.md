@@ -1,6 +1,12 @@
-# Workflow: The Four Phases In Detail
+# Workflow: Phases In Detail
 
-Use this when SKILL.md's summary isn't enough.
+Use this when SKILL.md's summary isn't enough. The canonical flow is Phase 0 → 1 → (1.5) → 2 → 3 → 4. See also `gap-scorecard.md`, `ats-optimization.md`, `batch-workflow.md`.
+
+## Phase 0: Resolve inputs and mode
+
+1. Detect single, batch, critique-only, or screen-only mode.
+2. Load profile and JD sources; confirm parsed role/company/seniority with the user in 4–6 lines.
+3. For batch, read `batch-workflow.md` before Phase 1.
 
 ## Phase 1: Profile and JD ingestion
 
@@ -53,6 +59,21 @@ Before writing anything, score the candidate's fit against the JD's required and
 | **Very weak** | Multiple required quals unmet. Flag clearly; recommend a different role at the same company. |
 
 **Tell the user the score before tailoring.** If they want to proceed on weak / very weak fit, fine, but they should know.
+
+### Gap scorecard
+
+After fit tier, build the must-have table per `gap-scorecard.md`. Present ✅ / 🟡 / ❌ for each required qualification. This table drives Phase 1.5 and sets screener expectations.
+
+## Phase 1.5: Targeted discovery and strategic questions
+
+**Conditional.** Run when scorecard has 🟡 items, profile is thin, or batch aggregate gaps need shared answers.
+
+1. Up to 5 branching questions per `experience-discovery.md`.
+2. Update working profile and re-run scorecard.
+3. Ask positioning/emphasis questions per `strategic-questions.md`.
+4. Compile internal tailoring strategy before drafting.
+
+Skip in critique-only mode unless blocking.
 
 ## Phase 2: Tailored draft
 
@@ -109,6 +130,34 @@ Inside each category, list 5-15 specific items separated by commas. Don't list a
 ### DOCX generation
 
 Use the template in `templates/lib.js` plus `templates/resume-template.js`. See `templates/README.md` for usage.
+
+Write bullets per `bullet-patterns.md`.
+
+### ATS keyword pass
+
+After draft text exists, run `ats-optimization.md`: exact-phrase must-have check, patch closest bullets, produce ATS keyword report for the user. Re-run linter after patches.
+
+### Build pipeline
+
+```bash
+node scripts/build-resume.js --lint-only
+node scripts/build-resume.js
+```
+
+Optional: `node scripts/check-keywords.js --jd jd.txt --content content.js`
+
+### Compression loop (page count over target)
+
+Suggest cuts in order; **ask before applying**:
+
+1. Drop Languages section (if US/global role).
+2. Compress oldest role(s) to one line or two short bullets.
+3. Trim education extras for 5+ years experience.
+4. Drop skill categories irrelevant to this JD.
+5. Remove weakest bullets in older roles.
+6. Tighten summary length.
+
+Re-build and report new page count after each round the user approves.
 
 ## Phase 3: In-character screener critique
 
