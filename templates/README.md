@@ -62,6 +62,22 @@ To run *only* the anti-pattern check without building:
 ```bash
 node /path/to/skill/scripts/build-resume.js --lint-only
 ```
+
+### ATS keyword check (optional)
+
+After filling `content.js`, compare against a saved JD:
+
+```bash
+node /path/to/skill/scripts/check-keywords.js --jd /path/to/jd.txt --content content.js
+```
+
+For precision, pass explicit must-haves from your gap scorecard:
+
+```bash
+node scripts/check-keywords.js --content content.js --phrases "AWS Lambda,CI/CD,Kubernetes"
+```
+
+See `reference/ats-optimization.md` for the full keyword pass workflow.
 ```
 
 ## DOCX to PDF (for page count verification)

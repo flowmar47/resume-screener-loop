@@ -65,7 +65,14 @@ const BANNED_PATTERNS = [
   { term: "beacon of", regex: /\bbeacon\s+of\b/i },
   { term: "testament to", regex: /\btestament\s+to\b/i },
   { term: "fostered", regex: /\bfostered\b/i },
-  { term: "pioneered", regex: /\bpioneered\b/i }
+  { term: "pioneered", regex: /\bpioneered\b/i },
+  { term: "seasoned professional", regex: /\bseasoned\s+professional\b/i },
+  { term: "dynamic professional", regex: /\bdynamic\s+professional\b/i },
+  { term: "results-driven", regex: /\bresults[- ]driven\b/i },
+  { term: "synergy", regex: /\bsynergy\b/i },
+  { term: "orchestrated (vague)", regex: /\borchestrated\b/i },
+  { term: "spearheaded (vague)", regex: /\bspearheaded\b/i },
+  { term: "references available upon request", regex: /\breferences\s+available\s+upon\s+request\b/i }
 ];
 
 // Color logging helpers
