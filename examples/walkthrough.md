@@ -1,246 +1,158 @@
-# Walkthrough: A Full Loop, End to End
+# Walkthrough: One Full Loop
 
-A worked example of the resume-screener-loop workflow on a single role. The candidate and company are fictional; only the methodology is real.
+A worked example on a fictional candidate. Every name, company, and URL here is invented; the checker output is real, produced from the sample built with the repository's templates.
 
-**Phases covered:** 0 (confirm inputs) → 1 (ingest + fit + gap scorecard) → 1.5 (skipped here; no 🟡 gaps after user confirms workshops) → 2 (draft + ATS pass + build) → 3 (screener) → 4 (revise + deliver).
+## Setup
 
-## The setup
+**Candidate**: Avery Lin, pivoting from solar project management to AI deployment. Supplies an existing two-page resume from the solar role, a personal site (`averylin.example`) documenting a subscription market-briefing product with paying subscribers since 2023, the product's repository README (Python 3.11, FastAPI, multi-source ingestion, Prometheus and Grafana, Docker on Ubuntu Server), and a LinkedIn URL. Preferences: keep the site link, no salary figures.
 
-**Candidate input:** Avery Lin, a senior engineer pivoting from solar PM to AI deployment. Provides:
-- An existing resume from their solar PM role (DOCX, 2 pages).
-- A personal site `averylin.example` documenting a side project: a production agentic AI system for personal financial alerts with paying subscribers since 2023.
-- A GitHub repo for the financial-alerts system (Python, FastAPI, multi-source API ingestion).
-- LinkedIn URL.
+**Job**: "AI Deployment Engineer at OpenAI", no URL. Searched, fetched the employer's listing, saved to `work/jd.txt`.
 
-**Job input:** "AI Deployment Engineer at OpenAI", no JD URL provided.
+## Phase 1: Evidence ledger (excerpt)
 
-## Phase 1: Profile and JD ingestion
+| id | fact | source | kind | confidence | basis |
+|---|---|---|---|---|---|
+| E1 | Senior Project Manager, Acme Solar, Jun 2017 to Feb 2025 | resume, LinkedIn | role | stated | |
+| E2 | Founder, Daily Financial Alerts, Jan 2023 to present | site About, LinkedIn | role | stated | |
+| E3 | Briefing delivered to paying subscribers every trading day by 7:00 AM Pacific | site methodology page | scope | observed | |
+| E4 | Ingestion from Alpha Vantage, FRED, Polygon, Finnhub with fallback chains and cross-source price validation | README, Architecture | project | observed | |
+| E5 | Briefing has nine sections; alerting on missed sections | README, Operations | scope | observed | |
+| E6 | Evaluation harness for tool-call accuracy and section completeness | README, Testing | project | observed | |
+| E7 | Prometheus and Grafana dashboards; runbooks per upstream failure | README, Operations | project | observed | |
+| E8 | "Cut briefing build time by 60%" | old resume | metric | stated | unmeasured: no baseline recorded |
+| E9 | Consulting for two enterprise clients (fintech, healthcare) on LLM workflow automation since Mar 2025 | LinkedIn, chat | role | stated | |
+| E11 | Daily use of Claude Code and Cursor; reference implementations left with clients | chat | skill | stated | |
+| E12 | Cross-functional teams of 12 (engineering, construction, interconnection, permitting) | old resume | scope | stated | |
+| E13 | Multi-year commercial solar portfolio, on-time delivery | old resume | scope | stated | |
+| E15 | B.S. Electrical Engineering, UT Austin, 2017 | resume | education | stated | |
+| E16 | Austin, TX; open to remote US; no sponsorship needed | chat | constraint | stated | |
 
-### Acquiring the JD
+Questions raised: Q1 "Have you run any training or enablement sessions, internal or external? Audience, topic, when." Q2 "The 60% build-time figure: measured how, against what baseline?"
 
-The candidate gave a title and company only. Search:
+## Phase 2: Requirements matrix and fit tier
 
-```
-web_search: "OpenAI" "AI Deployment Engineer" careers
-```
+| id | requirement | type | weight | evidence | status | placement |
+|---|---|---|---|---|---|---|
+| R1 | 5+ years technical consulting, post-sales, or solutions architecture | hard | 3 | E1, E9 (PM plus consulting) | adjacent | summary (bridge: technical program delivery for enterprise stakeholders) |
+| R2 | Power user of AI coding tools, customized workflow | hard | 3 | E11 | met | summary, skills |
+| R3 | Delivered large workshops or technical training to engineering teams | hard | 3 | none | ask (Q1) | pending |
+| R4 | Contributed technical guides or examples publicly | hard | 3 | E3 methodology pages, repo README | partial | public work section |
+| R5 | Own customer outcomes from discovery through rollout | responsibility | 2 | E9 | met | consulting bullets |
+| R6 | Comfortable with Python and TypeScript | hard | 2 | E4 (Python); no TypeScript row | partial | skills; fit note |
+| R7 | Evaluation harnesses for LLM applications | soft | 2 | E6 | met | lead role bullet 3 |
+| R8 | Fintech or healthcare customer experience | soft | 1 | E9 | met | consulting header |
+| R9 | Remote US, work authorization | hard | 3 | E16 | met | contact line, summary |
 
-Top result: `openai.com/careers/ai-deployment-engineer-codex/`. Fetch:
+Tier before answers: **weak** (R3 is `ask`, counted as a gap). Reported to Avery with Q1 and Q2.
 
-```
-web_fetch: https://openai.com/careers/ai-deployment-engineer-codex/
-```
+Avery's answers: Q1, three half-day enablement sessions for the two consulting clients on prompt design and evaluation harness construction (new row E10). Q2, never measured; drop the number. R3 becomes `met`. Recomputed tier: **moderate**. All hard rows met or adjacent with one adjacent (R1) carrying a stated bridge; R6 partial on TypeScript is noted in the fit note.
 
-Read the JD in full. Extract:
+## Phase 3: Draft
 
-- **Required quals:** 5+ years technical consulting / post-sales / SA, power user of AI coding tools, large-format workshops, contributed technical content publicly.
-- **Responsibilities:** Embed with customer engineering teams; design AI-enhanced workflows; build demos with Codex itself; lead workshops; contribute to OpenAI Cookbook.
-- **Level:** Senior IC.
-- **Comp range:** $197K – $278K + equity.
-- **Location:** Remote US.
-- **Cultural signals:** "Power user", "deeply customized developer workflow", "high-impact workshops".
+Composition, in matrix order: name and contact with the remote statement (R9); headline "AI Deployment Engineer"; summary carrying the R1 bridge, R2, and R9; lead role Daily Financial Alerts (E2 to E7); consulting role with the workshop bullet (E10) and the tooling bullet (E11); solar PM compressed to two bullets (E12, E13); skills in four categories; Selected Public Work (R4); education (E15). No number from E8.
 
-### Ingesting the candidate's profile
-
-1. **Resume.** Read it. Note: Avery has 8 years of solar PM experience but limited customer-facing AI work in the existing resume.
-2. **Personal site.** `web_fetch` `averylin.example`. Site documents the financial-alerts product: operational since 2023, paying subscribers, daily SLA at 7:00 AM PST, multi-source API integration.
-3. **GitHub README.** Real production system: Python 3.11, FastAPI, multi-API ingestion (Alpha Vantage, FRED, Polygon, Finnhub), Prometheus / Grafana monitoring, Docker, deployed on Ubuntu Server with systemd.
-4. **LinkedIn.** Confirms titles and dates. Adds: Avery has done occasional consulting for two enterprise clients on AI deployment over the past 18 months.
-
-### Fit assessment
-
-- 5+ years technical: yes (8 years of PM + 18 months consulting + 3 years on the AI product).
-- Power user of AI coding tools: implied but not on the existing resume.
-- Workshops: minimal evidence; some internal training at solar PM role.
-- Public technical content: the personal site is public, but no Cookbook contributions.
-
-**Fit: Moderate-strong.** Strong on production AI credibility and customer-facing background; weak on public technical writing.
-
-State the fit assessment and gap scorecard to Avery before drafting:
-
-> **Fit: moderate-strong.** You meet 5+ years via PM and consulting; production AI credibility is strong. **Gap scorecard must-haves:** ✅ technical customer-facing, ✅ production agentic system, 🟡 large workshops (internal only), ❌ public Cookbook-style writing. I'll draft to foreground the product and consulting; workshops need a discovery answer if you've run any. Proceed?
-
-## Phase 2: Tailored draft
-
-Set up the working directory:
+Built with the templates:
 
 ```bash
-mkdir avery_lin_openai && cd avery_lin_openai
-cp /path/to/skill/templates/lib.js .
-cp /path/to/skill/templates/content-template.js ./content.js
+node build_avery.js
+# Wrote: ./Resume_Avery_Lin_OpenAI_AI_Deployment_Engineer.docx
 ```
 
-Fill `content.js` with Avery's actual material:
-
-```js
-const CONTACT_LINE_1 = [
-  "Austin, TX  |  ",
-  "avery@averylin.example",
-  "  |  (555) 555-5555",
-];
-const CONTACT_LINE_2 = [
-  { link: "https://linkedin.com/in/averylin", text: "linkedin.com/in/averylin" },
-  "  |  ",
-  { link: "https://averylin.example", text: "averylin.example" },
-];
-
-const ALERTS_HEADER = {
-  title: "Founder & Principal Engineer",
-  org: "Daily Financial Alerts (averylin.example)",
-  dates: "2023 – Present",
-};
-const ALERTS_BULLETS_AI = [
-  bullet("Architected and operate a production agentic AI platform delivering a daily institutional-grade briefing to paying subscribers via Telegram and Signal at 7:00 AM PST every trading day; durable enough to run unattended day after day."),
-  bullet("Multi-stage agentic workflow orchestrating many coordinated tool calls per run across multiple financial-data APIs with intelligent fallback chains, multi-source price validation, and graceful degradation when individual providers fail."),
-  bullet("Designed evaluation harnesses for tool-calling accuracy, data completeness, and end-to-end workflow success; built monitoring (Prometheus, Grafana) and runbooks that preserve subscriber SLA through upstream failures."),
-  // ...
-];
-
-const SOLAR_PM_HEADER = {
-  title: "Senior Project Manager",
-  org: "Acme Solar",
-  dates: "2017 – Present",
-};
-const SOLAR_PM_BULLETS_SHORT = [
-  bullet("Direct cross-functional teams of 12+ across engineering, construction, utility interconnection, and AHJ permitting; consistent on-time delivery across multi-million-dollar commercial programs."),
-  bullet("Translate ambiguous requirements into scoped plans; present status, risk, and trade-offs to executive stakeholders."),
-];
-
-// ... etc
-```
-
-Build `build_codex_de.js`:
-
-```js
-const { name, contact, sectionHeader, summary, buildDoc, writeDoc,
-        roleHeader, roleNote, bullet, skillLine } = require("./lib");
-const C = require("./content");
-
-function build() {
-  const c = [];
-  c.push(name("AVERY LIN"));
-  c.push(contact(C.CONTACT_LINE_1));
-  c.push(contact(C.CONTACT_LINE_2));
-
-  c.push(sectionHeader("Professional Summary"));
-  c.push(summary(
-    "Five plus years of customer-facing technical advisory across enterprise AI deployment, " +
-    "consulting, and regulated infrastructure delivery. Daily power user of modern AI coding " +
-    "tools with a deeply customized developer workflow. Operate a production agentic AI platform " +
-    "with a strict daily SLA for paying subscribers; embed with customer engineering teams from " +
-    "discovery through production rollout."
-  ));
-
-  c.push(sectionHeader("Relevant Experience"));
-
-  // Lead with the most-relevant role: the AI product
-  c.push(roleHeader(C.ALERTS_HEADER));
-  c.push(roleNote("Production agentic AI platform delivering a strict daily SLA to paying subscribers."));
-  c.push(...C.ALERTS_BULLETS_AI);
-
-  // Customer-facing consulting
-  c.push(roleHeader(C.CONSULTING_HEADER));
-  c.push(...C.CONSULTING_BULLETS);
-
-  // Solar PM as supporting cross-functional credibility
-  c.push(roleHeader(C.SOLAR_PM_HEADER));
-  c.push(roleNote("Multi-million-dollar program execution across regulated multi-stakeholder environments."));
-  c.push(...C.SOLAR_PM_BULLETS_SHORT);
-
-  c.push(sectionHeader("Selected Technical Skills"));
-  c.push(skillLine("AI Coding Tools (Daily)", "Claude Code, Cursor, Windsurf, Cline, v0"));
-  c.push(skillLine("LLM & Agentic Systems", "Claude API, GPT-4, self-hosted Ollama, RAG, multi-model evaluation"));
-  c.push(skillLine("Engineering Stack", "Python (FastAPI, asyncio), Docker, Ubuntu Server, Prometheus, Grafana"));
-  c.push(skillLine("Customer-Facing Delivery", "Technical discovery, workshops, runbook authoring, post-rollout support"));
-
-  c.push(sectionHeader("Selected Public Work"));
-  c.push(bullet("averylin.example, methodology pages document the agentic system architecture, multi-API orchestration patterns, and evaluation harness design."));
-
-  c.push(sectionHeader("Education"));
-  c.push(...C.EDU);
-
-  return c;
-}
-
-(async () => {
-  const doc = buildDoc(build());
-  await writeDoc(doc, "/output/Resume_Avery_Lin_OpenAI_Codex_DE.docx");
-})();
-```
-
-Build, then verify page count:
+## Phase 4: Mechanical gate
 
 ```bash
-NODE_PATH=$(npm root -g) node build_codex_de.js
-libreoffice --headless --convert-to pdf Resume_Avery_Lin_OpenAI_Codex_DE.docx
-pdfinfo Resume_Avery_Lin_OpenAI_Codex_DE.pdf | grep Pages
-# Pages: 2
+node scripts/resume-check.js Resume_Avery_Lin_OpenAI_AI_Deployment_Engineer.docx \
+  --jd jd_openai.txt --must "Python,workshops,Claude Code" --text Resume_Avery_Lin.txt
 ```
 
-Run the anti-pattern checklist:
-
-- No em dashes: confirmed.
-- No fabricated metrics: "many coordinated tool calls", "multiple financial-data APIs", "paying subscribers", "daily SLA", all qualitative or structurally true.
-- No "world-class", "passionate about", etc.: confirmed.
-- No overclaimed expertise: Avery has the FastAPI / agentic / customer-facing claims documented.
-
-Draft is ready for screening.
-
-## Phase 3: In-character screener critique
-
-> **Hiring agent: OpenAI Codex DE Recruiter, screening for the Codex Deployment Engineer role.**
->
-> **Bar:** 5+ yrs technical consulting / post-sales / SA, power user of AI coding tools, large-format workshops, contributed technical content publicly, end-to-end customer ownership.
->
-> **Verdict at 30 seconds: Forward, with reservations.**
->
-> **What works:**
-> - The "deeply customized developer workflow" framing matches the JD verbatim. Lands well.
-> - Production AI credibility is real: paying subscribers, daily SLA, multi-source ingestion. Strong substrate.
-> - 5+ years requirement met cleanly with the PM + consulting + AI product mix.
->
-> **What's wrong:**
-> 1. **No large-format workshops documented.** The JD explicitly says "Have experience delivering large, high-impact workshops or technical training to engineering teams." The resume mentions "post-rollout support" but doesn't name a single workshop. If Avery has done any workshops, they need to be named.
-> 2. **No public technical content beyond the personal site.** The JD says "Have contributed technical guides, patterns, or examples publicly and care about clarity, pedagogy, and community impact." No Cookbook contributions, no blog posts, no conference talks. The "Selected Public Work" section is one bullet; it should be more.
-> 3. **No customer logos or industry segments.** "Customer engineering teams" is vague. The two enterprise consulting clients Avery has worked with: even if they can't be named publicly, the industries served should be.
-> 4. **No Codex-specific framing.** This is the Codex DE role; the resume could mention SDLC integration patterns, code-generation workflows, or agent-in-IDE patterns specifically.
-> 5. **Solar PM is taking real estate but doing little for this role.** Compress to two short bullets at most.
->
-> **What would change my mind:**
-> - Add explicit workshop bullets with audience and topic.
-> - Surface any technical writing Avery has done, even on a personal blog.
-> - Add a Codex-specific bullet.
->
-> **Outcome:** Forward as strong technical candidate; flag the workshop and public-content gaps to hiring manager.
-
-## Phase 4: Revision pass
-
-Apply the findings:
-
-1. **Add a workshop bullet.** Ask Avery: "Have you led any workshops or trainings, even internally? Even a half-day team session counts." Avery says yes, led three half-day enablement sessions for the two consulting clients on prompt engineering and evaluation harness design. Add to consulting bullets.
-
-2. **Add a Codex-specific bullet** to the consulting role: "Use AI coding tools (Claude Code, Cursor) end-to-end during customer engagements: scope and prototype with the tool, build reference implementations, and ship documented workflow automations that customers adopt and extend."
-
-3. **Add customer industries served.** Avery's two consulting clients are fintech and healthcare. Update the consulting summary: "Trusted technical advisor to enterprise clients in fintech-adjacent and healthcare-adjacent segments."
-
-4. **Compress solar PM** to two bullets total.
-
-5. **Expand Selected Public Work** by adding the GitHub repo for the financial-alerts product as a second bullet.
-
-Rebuild, re-verify page count (still 2 pages), re-run anti-pattern checklist (clean), and deliver.
-
-## Deliverable
+Output (LibreOffice installed, so the page count is measured):
 
 ```
-Resume_Avery_Lin_OpenAI_Codex_DE.docx
+resume-check: Resume_Avery_Lin_OpenAI_AI_Deployment_Engineer.docx  [docx]  pages: 2 (libreoffice)  words: 401
+
+MINOR    [acronym-both-forms] keyword appears in only one form; parsers do not always map acronym to expansion.
+           - LLM: also spell out "large language model" once
+VERIFY   [jd-terms-missing] JD terms not found in the resume, highest weight first. Judge each: genuine gap (say so in the fit assessment), same skill under another name (use the JD's wording once), or irrelevant (ignore). Never add a term the candidate cannot defend.
+           - user of ai (w3)
+           - contributed technical guides (w3)
+           - technical consulting (w3)
+           - post-sales engineering (w3)
+           - solutions architecture (w3)
+           - power user (w3)
+           - high-impact workshops (w3)
+           - technical training (w3)
+           - customer outcomes (w3)
+           - healthcare customer (w3)
+           - examples (w3)
+           - clarity (w3)
+           - pedagogy (w3)
+           - community (w3)
+           - typescript (w3)
+INFO     [page-budget] 2 page(s) (libreoffice), budget 2.
+INFO     [word-count] 401 words.
+INFO     [keyword-coverage] diagnostic only, not an ATS score: 10 of 25 candidate JD terms appear in the resume.
+INFO     [must-have-present] all 3 required term(s) present.
+
+top-third preview (what a 7-second scan sees):
+  | AVERY LIN
+  | Austin, TX (open to remote US)  |  avery@averylin.example  |  (555) 555-0100
+  | linkedin.com/in/averylin  |  averylin.example
+  | AI Deployment Engineer
+  | PROFESSIONAL SUMMARY
+  | Eight years delivering technical programs for enterprise stakeholders, the last three building and operating a produc...
+  | RELEVANT EXPERIENCE
+  | Founder & Principal Engineer  |  Daily Financial Alerts (averylin.example)	Jan 2023 – Present
+  | Production agentic AI platform with paying subscribers and a daily delivery SLA.
+  | • Built and operate a production agentic platform that compiles a nine-section market briefing for paying subscribers...
+
+summary: 0 blocker, 0 major, 1 minor, 1 verify, 4 info → PASS
 ```
 
-Plus a cover note:
+Working the VERIFY list against the matrix: "power user" and "customer outcomes" are wording mismatches (the ledger supports both; use the JD's phrasing once). "technical consulting", "post-sales engineering", "solutions architecture" are the R1 bridge; the summary will name "technical consulting" explicitly. "typescript" is the R6 gap; it stays in the fit note. "pedagogy", "community", "clarity", "examples" are culture language, ignored. The LLM acronym note is accepted: spell it out once in the skills line. The page count passes the budget, but the render shows page two holding only the education line; that goes on the revision list.
 
-> Fit: moderate-strong. Workshop and public-technical-content gaps remain (would benefit from a Cookbook contribution if you have time before applying). All other JD requirements met cleanly. Resume is 2 pages, ATS-friendly, no em dashes, no fabricated metrics. Ready to submit.
+## Phase 5: Three-reader screen (blinded copy)
 
-## What this example illustrates
+**Reader A, recruiter scan.** From the top third: title line matches the req, current role is a founder-engineer role with dates, remote US and authorization answered, skills block leads with the AI coding tools the JD names. Knockouts answerable. Verdict: **forward**. One finding (clarity, major): total years of relevant experience are not obvious at a glance; "eight years" in the summary reads as PM years. Fix: state "three years operating a production AI system, eight years delivering technical programs" in that order.
 
-- The loop catches gaps a single-pass tailoring would miss (the workshop gap, the Codex-specific framing).
-- The honest fit assessment up front lets the candidate decide whether to invest in a Cookbook contribution before submitting.
-- The shared content module lets multiple OpenAI applications (Success Engineer, Deployment Manager, etc.) reuse the same source material with role-specific variants.
-- The DOCX builder produces ATS-friendly output without manual layout work.
+**Reader B, hiring manager (frontier AI lab persona), run 1.**
+
+> Hiring manager: leads the Codex deployment team. Bar: has shipped AI into a customer's engineering workflow, teaches well, writes publicly, power user. Verdict at 30 seconds: forward, flagged on public writing.
+>
+> What works: the alerts platform is real production AI with a daily SLA and paying users; the fallback and validation detail reads like someone who has been paged. The workshop bullet answers the training requirement with audience and topic.
+>
+> What is wrong: (fit, major) public contribution is a personal site and a repo, not guides or examples other engineers have used; say what the methodology pages teach and whether anyone outside uses the repo. (credibility, minor) "Embedded with two enterprise engineering teams" needs the segment named in the bullet, not only the header. (clarity, minor) the italic note under the lead role repeats the first bullet; cut it.
+>
+> What would change my mind: one Cookbook-style guide published before applying.
+>
+> Verdict: forward, flagged on public technical content.
+
+**Run 2** reproduced the public-content finding and the segment finding; the note-line finding did not recur and is dropped.
+
+**Reader C, skeptic.** Challenged: "nine-section briefing" (E5, holds); "cross-source price validation" (E4, holds); "three half-day sessions" (E10, candidate-stated; interview probe: "walk me through one session's agenda"); "eight years delivering technical programs" (E1 spans seven years eight months; rewrite as "since 2017"). No numbers without basis remain. Titles and dates match LinkedIn.
+
+## Phase 6: Revision and convergence
+
+Round 1 changes: reorder the summary's experience clause ("Three years building and operating a production agentic AI platform... on top of technical program delivery for enterprise stakeholders since 2017"); name fintech and healthcare in the consulting bullet; expand the public-work bullets to say what each page teaches and that the repo's runbooks are referenced by the two client teams (E9, confirmed with Avery); spell out "large language model" once; cut the italic note under the lead role. Rebuilt and re-gated: `pages: 1 (libreoffice)`, no blocker or major findings, the top-third preview now opens with the AI-platform years. Reader A forward; Reader B forward-flagged on a flag only Avery can change (a published guide); Reader C no open challenges. Converged after one round.
+
+## Phase 7: Deliverable
+
+```
+out/Resume_Avery_Lin_OpenAI_AI_Deployment_Engineer.docx
+out/Resume_Avery_Lin_OpenAI_AI_Deployment_Engineer.txt
+```
+
+Cover note:
+
+> Fit: moderate. Hard requirements met or bridged; the consulting-years requirement is answered by technical program delivery plus eighteen months of AI deployment consulting, stated as such. Gaps: TypeScript (not claimed), and public technical content is thinner than the JD wants; a single published guide before applying would move the hiring-manager verdict from forward-flagged to forward. One round of revision. Nothing on the page relies on an unmeasured number; the old 60% figure was dropped at your confirmation.
+>
+> Interview probes: the workshop agenda (E10); how cross-source price validation decides which provider to trust (E4); what "unattended" means operationally and what pages you (E5, E7).
+>
+> Open: none. You review and submit; I have not sent anything anywhere.
+
+## What the example shows
+
+- The ledger turned an unmeasured percentage into a question and then into its removal, instead of into a bullet.
+- The matrix made the fit tier a computation: `ask` counted as a gap until answered, and the answer moved the tier.
+- The gate ran before any critique and produced the plain-text file for free.
+- Reader A caught a top-third problem no bullet-level critique would; Reader B's repeat run dropped a taste finding; Reader C produced the interview probes.
+- The loop converged in one round because the checker had already removed the mechanical noise the critics would otherwise have spent their findings on.

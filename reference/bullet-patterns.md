@@ -1,82 +1,64 @@
-# Bullet-Writing Patterns
+# Bullet Patterns
 
-Use in **Phase 2** when converting working profile notes into resume bullets. Complements `workflow.md` bullet guidance and enforces `anti-patterns.md`.
+How to turn ledger rows into bullets. Each bullet cites its rows in the working copy; the skeptic checks them.
 
-## Strong bullet shapes
+## Shapes
 
-### Action → system → outcome
+**Outcome, mechanism, tools** (the default; Google's "accomplished X as measured by Y by doing Z" when a measured Y exists):
 
-```
-<Strong verb> <what you built/changed> <scope>, <honest outcome>.
-```
+> Reconciles processor files against ledger entries nightly, unattended, with alerting on drift; Go, PostgreSQL, Kafka.
 
-Example: "Built multi-source price ingestion with API fallback chains for a daily subscriber briefing, maintaining strict 7:00 AM SLA across upstream outages."
+**Scope, work, why it mattered** (ownership bullets):
 
-### Problem → decision → result (senior IC / lead)
+> Owned authentication for a fifteen-service platform; shipped the two-factor flow that unblocked the enterprise tier's launch.
 
-```
-<Situation>. <Chose X over Y because Z>. <Result>.
-```
+**Situation, decision, result** (senior and staff roles, one per lead role at most):
 
-Example: "Faced rotating shared secrets across 40 services; adopted JWKS public-key verification despite setup cost, eliminating quarterly rotation incidents."
+> Rotating shared secrets across forty services caused quarterly incidents; moved verification to published keys despite the setup cost, and the rotation incidents stopped.
 
-### Scope → work → org impact (team-level)
+**Qualified outcome when there is no measurement**:
 
-```
-<Ownership scope>. <What you did>. <Why it mattered>.
-```
+> Replaced a manual deploy runbook with one pipeline (GitHub Actions, Terraform) for six services; deploys no longer wait on an operator.
 
-Example: "Owned auth integration for 15-service platform; delivered 2FA flow that unblocked GA launch for enterprise tier."
-
-## Verb selection by track
+## Verbs by track
 
 | Track | Prefer |
-|-------|--------|
-| Engineering (build) | Built, designed, shipped, implemented, operated, debugged, instrumented |
-| Engineering (lead) | Led, owned, mentored, coordinated, drove, unblocked |
-| PM / TPM | Scoped, delivered, aligned, mitigated, staffed, reported |
-| Customer-facing | Embedded, enabled, trained, onboarded, supported |
-| Sales / CS | Expanded, retained, closed, negotiated (only with real data) |
+|---|---|
+| Engineering, build | built, designed, shipped, implemented, operated, debugged, instrumented, migrated, reconciled |
+| Engineering, lead | led, owned, mentored, coordinated, unblocked, reviewed |
+| Program and product | scoped, delivered, negotiated, aligned, staffed, reported, prioritized |
+| Customer-facing | embedded, enabled, trained, onboarded, supported, ran (workshops) |
+| Sales and success | closed, expanded, retained, renewed (with attainment from the ledger) |
+| Research | measured, evaluated, published, replicated, modeled |
 
-Avoid: "responsible for", "helped with", "worked on", "involved in" unless rewriting would misstate a junior supporting role.
+Never as openers: spearheaded, leveraged, orchestrated, utilized, championed, pioneered, fostered, streamlined, drove, helped, worked on, responsible for. No opener more than twice in the document; none twice in a row under one role.
 
-## First-bullet rule
+## The first bullet under the lead role
 
-The **first bullet under the lead role** is the highest-impact line on the resume. It should:
+It is the most-read line after the header. It carries the strongest hard-row match, the candidate's strongest defensible scope, and two or three of the JD's exact terms where the ledger supports them. It should be able to sustain ten minutes of interview questions.
 
-- Plant 2–3 JD must-have keywords naturally
-- Reflect the strongest defensible achievement for this role
-- Be interview-deep (10+ minutes of real stories)
-- Pass anti-pattern and fabrication rules
+## Length and count
 
-## Quantification
+One to two rendered lines per bullet (the checker flags anything past about 240 characters). Up to six bullets on the lead role, two to four on older roles, one or two on roles kept only for timeline continuity.
 
-Use numbers **only from the profile**. Acceptable without measurement theater:
+## Numbers
 
-- Years, team sizes, module counts, named scale facts the candidate can explain
-- Qualitative: "paying subscribers", "daily automated execution", "multi-year retention"
-
-If no number exists: ask in discovery, use qualitative phrasing, or omit the claim.
-
-## Bullets to avoid
-
-| Weak | Fix direction |
-|------|----------------|
-| Responsible for backend services | Name stack, scale, ownership |
-| Improved performance | Method + honest scope (no fake %) |
-| Worked on Kubernetes migration | Role + outcome + scale |
-| Long comma-separated tech list in Experience | Move to Skills; Experience = actions |
-
-## Length
-
-- 1–2 lines rendered per bullet for most roles
-- 3 lines max for a flagship achievement on the lead role
-- Vary opening verbs across adjacent bullets
+Only from the ledger, only with a basis. Team sizes, counts of things the candidate can enumerate, cadence, and named system facts usually have one. Percentages and dollar figures usually do not; when they do not, qualify: scope, before and after state, audience, cadence.
 
 ## JD vocabulary without lying
 
-If JD says "platform engineering" and profile says "infrastructure platform", use **platform engineering** in the resume when the work is the same. Semantic alignment for ATS and recruiters is fine; inventing work is not.
+When the posting says "platform engineering" and the ledger says "infrastructure platform" for the same work, use the posting's term. When the work differs, do not. Carry a searched acronym and its expansion once each.
+
+## Weak bullets and their fixes
+
+| Weak | Fix |
+|---|---|
+| Responsible for backend services | name the services, the stack, and what owning them meant |
+| Improved performance | the mechanism and the honest scope; no invented percentage |
+| Worked on the Kubernetes migration | your role, what moved, what changed afterwards |
+| A comma-separated tool list inside Experience | move tools to Skills; Experience is actions and outcomes |
+| A bullet that would read the same at any company | add the thing only this candidate at this company could say |
 
 ## Self-referential framing
 
-Do not write: "Demonstrates the same pattern [Target Company] uses." Describe the work; let the reader infer fit.
+Do not write "demonstrates the same pattern {target company} uses." Describe the work.

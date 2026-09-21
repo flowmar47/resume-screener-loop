@@ -1,105 +1,58 @@
-# Targeted Experience Discovery
+# Experience Discovery: Asking the Candidate
 
-Phase 1.5 only. Goal: fill **🟡 adjacent** gaps and surface undocumented work without re-running a full career interview.
+Rows in the requirements matrix with status `ask`, `partial`, or `adjacent` are the only reason to interview the candidate. The goal is a fact that becomes a ledger row, not a career retrospective.
 
-**Cap: 5 questions total per session.** Each answer should be able to become a bullet or scorecard upgrade.
-
-## When to run
-
-- Gap scorecard has 🟡 rows the user might clarify.
-- JD requires workshops, public writing, named tools, or customer segments not on the resume.
-- Profile is thin but the user claims relevant experience in chat.
-- Batch mode: shared gaps across multiple JDs (ask once, tag relevance per job).
+**Cap: five questions per batch**, asked once at the fit-tier checkpoint. A second batch is allowed only if a reader exposes a gap that only the candidate can fill. If they want a deeper interview, they will say so.
 
 ## Principles
 
-1. **Branch on answers** — do not read a static questionnaire. See patterns below.
-2. **JD-tied** — every question references a specific requirement or scorecard row.
-3. **Truth-preserving** — capture what the user says; do not embellish in notes.
-4. **Compound value** — append durable discoveries to `content.js` or the user's master profile if they maintain one.
+1. **Tie every question to a matrix row.** Name the requirement and what the ledger currently shows for it.
+2. **Branch on the answer**; do not read a list.
+3. **Record answers verbatim as ledger rows** (source `chat`, confidence `stated`). Do not embellish in the notes; the skeptic reads them.
+4. **A tutorial is not production.** Answers upgrade a row's status only when the fact would survive an interviewer's follow-up.
 
-## Technical skill gap pattern
+## Skill gap
 
-```
-PROBE: "The JD requires {SKILL}. Your scorecard shows {adjacent evidence or none}.
-       Have you used {SKILL} or {RELATED} in production, consulting, or a substantive side project?"
+> The posting requires {skill}. I have {adjacent evidence or nothing} for it. Have you used {skill} or {related} in production, in consulting work, or in a substantial side project?
 
-If YES (direct):
-  → What did you build? What scale? Production or dev only?
-  → What broke? How did you measure success?
-  → CAPTURE: bullet with named tools and honest scope
+- **Direct yes**: what did you build, at what scale, production or development only, what broke, how was success judged? Capture a bullet with named tools and honest scope; status `met`.
+- **Indirect**: what was your role relative to the work? Capture enabling or support framing if substantial; status `partial`.
+- **Adjacent only**: did the adjacent work include {the activity the JD cares about}? Capture a bridge clause if defensible; status `adjacent`.
+- **Learning or personal only**: what shipped, how recently? Include only when the row is hard and the work is real; otherwise status `gap`.
+- **No**: status `gap`. Say so in the fit note.
 
-If INDIRECT:
-  → What was your role relative to the {SKILL} work?
-  → CAPTURE: enabling/support framing if substantial
+## Soft-skill or experience gap
 
-If ADJACENT only:
-  → Describe {ADJACENT_TECH} work — did it include {relevant_activity}?
-  → CAPTURE: related expertise line if defensible
+> The role emphasizes {phrase from the JD}. Tell me about one time you did that, with the stakeholders involved and what came of it.
 
-If PERSONAL/LEARNING only:
-  → What did you ship? How recent?
-  → ASSESS: include only if gap is critical and work is substantive
+- **Concrete example**: who, what changed, any scale the candidate can defend. Capture as an achievement row.
+- **Vague**: reframe once ("have you ever {alternate framing}?"). Help them articulate; do not write fiction.
+- **Project-specific**: their role versus others, cross-functional scope. Capture a coordination row if substantial.
 
-If NO:
-  → Note ❌ on scorecard; do not fabricate
-```
+## Metric without a basis
 
-## Soft skill / experience gap pattern
+> Your old resume says {number}. How was it measured, over what period, against what baseline? If you are not sure, I will describe the change instead of the percentage.
 
-```
-PROBE: "The role emphasizes {SOFT_SKILL} — e.g. '{JD phrase}'.
-       Tell me about a time you {demonstrated_that} with named stakeholders."
+- Basis given: record it in the ledger's basis column; the number may be used.
+- No basis: record `unmeasured`; the bullet describes the mechanism and scope instead.
 
-If STRONG example:
-  → Who was involved? What was the outcome? Any verifiable scale?
-  → CAPTURE: achievement bullet
+## Stale resume
 
-If VAGUE:
-  → Reframe: "Have you ever {alternate framing}?"
-  → Help articulate; do not write fiction
+> What have you worked on in the last six to twelve months that is not on the resume yet?
 
-If PROJECT-SPECIFIC:
-  → Your role vs others? Cross-functional scope?
-  → CAPTURE: leadership/coordination bullet if substantial
-```
+- Project described: role, stack, problem, outcome; check which matrix rows it touches.
+- Nothing new: process changes, tools adopted, mentoring, internal talks. Small real items can move a `partial` row.
 
-## Recent work probe
+## Conflicts between sources
 
-Use when the resume may be stale:
+> LinkedIn shows {title, dates}; the resume shows {title, dates}. Which is right? The final resume and your LinkedIn should match exactly.
 
-```
-"What have you worked on in the last 6–12 months that isn't on your resume yet?"
+Record the answer and tell the candidate to align the other source before applying.
 
-If project described:
-  → Role, stack, problem, impact
-  → Does this address scorecard row {X}?
+## Batch sessions
 
-If "nothing new":
-  → Process changes, tools adopted, mentoring, internal talks?
-  → Small items can fill 🟡 gaps if real
-```
+When a gap appears across several target roles, ask once and tag the answer with the roles it serves. Order questions by leverage: gaps in three or more roles first, then two, then one. See `batch-workflow.md`.
 
-## Multi-job leverage context
+## After the answers
 
-When the same gap appears in multiple JDs:
-
-```
-"{SKILL} appears in {N} of your target roles ({Company A}, {Company B}, ...).
-This is a {HIGH|MEDIUM|LOW}-leverage gap — answering once helps {N} applications.
-Current best match: {evidence summary}
-
-{Standard probe}"
-```
-
-- **HIGH:** 3+ jobs
-- **MEDIUM:** 2 jobs
-- **LOW:** 1 job
-
-## What not to do
-
-- Do not ask more than 5 questions in one session unless the user explicitly wants deeper discovery.
-- Do not accept hand-wavy answers and upgrade scorecard status without concrete facts.
-- Do not use discovery to justify overclaiming (e.g. one tutorial → "production Kubernetes").
-
-After discovery, update working profile, re-run gap scorecard, then proceed to strategic questions (`strategic-questions.md`).
+Add the rows, recompute the matrix statuses and the fit tier, and report the new tier if it changed. Then ask the strategic questions in `strategic-questions.md` and start drafting.

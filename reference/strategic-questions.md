@@ -1,85 +1,37 @@
-# Strategic Questions
+# Strategic Questions: Positioning Before the Draft
 
-Ask after Phase 1 (and Phase 1.5 if run), **before Phase 2 drafting**. Adapt based on gap scorecard; skip questions already answered.
+Ask after the fit tier is settled and any discovery answers are in the ledger, before Phase 3. Pick two to four; skip anything the candidate already answered. These shape emphasis, not facts.
 
-## Always ask (pick 2–4)
+## Positioning
 
-### Positioning
+> For {role} at {company}, the posting emphasizes {summary of the matrix's heaviest rows}. Should I position you for technical depth (hands-on, architecture, named stack), leadership breadth (teams, stakeholders, program scale), or let the matrix weights decide?
 
-```
-"For [Role] at [Company], the JD emphasizes [summary].
-How should I position you?"
-- Technical depth (hands-on, architecture, named stack)
-- Leadership breadth (teams, stakeholders, program scale)
-- Balanced (I'll weight by JD emphasis)
-```
+## Emphasis and exclusions
 
-### Emphasis
+> Strongest matches: {top three or four met rows}. Gaps I will name honestly: {gap rows}. Which roles or achievements should lead? Anything to de-emphasize or leave out?
 
-```
-"Strongest matches: [top 3–4 from scorecard ✅].
-Gaps to handle honestly: [top ❌ or 🟡].
-Which roles or achievements should lead? Anything to de-emphasize or exclude?"
-```
+Record exclusions as constraint rows in the ledger.
 
-### Output preferences
+## Output preferences
 
-```
-"Default deliverable is ATS-friendly DOCX (1–2 pages) + cover note.
-Any constraints? (no GitHub link, no dollar amounts, keep role X short, etc.)"
-```
+> Default deliverable: ATS-safe DOCX (two pages; one for new grads), a plain-text copy, and a cover note. Any constraints? No GitHub link, no dollar figures, keep role X short, a particular file name, PDF as well?
 
-## Conditional questions
+## Conditional
 
-### Date overlaps (only if detected)
+**Overlapping dates** (only when detected): "Roles A and B overlap. Concurrent consulting plus employment, a transition overlap, part-time or advisory, or something else? I will label it the way you describe."
 
-```
-"I see overlapping dates: [Role A] and [Role B]. How should I present this?"
-- Concurrent (consulting + employment)
-- Brief transition overlap
-- Part-time / advisory
-- [User explains]
-```
+**Domains the JD does not care about**: "Your profile includes {domain X}; the posting is about {domain Y}. Keep X with reduced detail for breadth, reframe it as transferable scope, or minimize it?"
 
-### Domain scope (resume has domains JD doesn't)
+**Location mismatch**: "The posting is {on-site or hybrid} in {location}; your profile says {preference}. Should the resume state willingness to relocate or be on site, or should we treat this as a filter and say so in the fit note?"
 
-```
-"Your profile includes [domain X]; the JD focuses on [domain Y]."
-- Keep with reduced detail (breadth)
-- Reframe transferable skills
-- Minimize (focus on target domain)
-```
+**Stretch fit or mission-driven employer**: "Fit is {tier}, or this employer hires on mission. A cover letter can address the gap directly. Want one alongside the resume? Resume only by default."
 
-### Remote / relocation (JD location mismatch)
+**Voice**: "Your current resume reads {formal, casual, technical}. Keep that voice or rewrite it?"
 
-```
-"JD is [on-site/hybrid] in [location]; your profile says [preference].
-Should the resume signal relocation or hybrid willingness?"
-```
+## Internal tailoring strategy
 
-### Cover letter (stretch or mission-driven company)
+From the answers, note for yourself (not as a deliverable unless asked): positioning direction; lead role and the bullets to foreground; sections to drop or compress; how each gap row will be handled (omit, cover letter, honest adjacent framing); the candidate's hard constraints. The draft follows this note and the matrix.
 
-```
-"Fit is [moderate/weak] or this is a mission-driven employer.
-Generate a cover letter to bridge gaps? (Resume-only by default)"
-```
+## Cover letters
 
-## Assemble tailoring strategy (internal)
-
-After answers, note:
-
-- Positioning direction
-- Lead role and bullets to foreground
-- Sections to drop or compress
-- How to handle each ❌ (omit vs cover letter vs honest adjacent framing)
-- User hard constraints
-
-Do not save as a separate file unless the user wants a written strategy doc.
-
-## Cover letter handoff
-
-This skill **does not** auto-generate cover letters. If the user wants one:
-
-- Bridge ❌ gaps with interest and adjacent experience, never fabricated quals.
-- Mirror company mission language from JD cultural signals.
-- Keep to one page; same anti-patterns as `anti-patterns.md`.
+Not produced by default. When the candidate says yes: one page; bridge gap rows with genuine interest and adjacent evidence, never with claims the ledger lacks; mirror the posting's mission language without the banned vocabulary; run the checker on the text for phrasing rules.
