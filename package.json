@@ -1,0 +1,16 @@
+{
+  "name": "resume-screener-loop",
+  "version": "2.0.0",
+  "description": "Adversarial resume tailoring skill: gap scorecard, ATS pass, screener loop, automated linting and DOCX build.",
+  "main": "templates/lib.js",
+  "scripts": {
+    "build": "node scripts/build-resume.js",
+    "lint": "node scripts/build-resume.js --lint-only",
+    "check-keywords": "node scripts/check-keywords.js"
+  },
+  "dependencies": {
+    "docx": "^8.5.0"
+  },
+  "author": "flowmar47",
+  "license": "MIT"
+}

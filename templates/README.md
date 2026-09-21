@@ -40,6 +40,32 @@ Fix blockers and majors, rebuild, rerun. The `--text` output is the plain-text d
 
 One `build_*.js` per target role, all importing the same `content.js`:
 
+### How to use it:
+
+1. **Create a working folder and copy templates**:
+   ```bash
+   mkdir resumes && cd resumes
+   cp /path/to/skill/templates/lib.js .
+   cp /path/to/skill/templates/content-template.js ./content.js
+   cp /path/to/skill/templates/resume-template.js ./build_my_role.js
+   ```
+
+2. **Edit `content.js` and `build_my_role.js`** with your candidate information.
+
+3. **Run the automated lint & compile**:
+   ```bash
+   # From your working folder, run:
+   node /path/to/skill/scripts/build-resume.js
+   ```
+
+This tool will automatically:
+- **Lint** your source files (`content.js` and `build_*.js`) for anti-patterns (em-dashes, double-hyphens, and AI clichés like "leveraged", "delved", or "tapestry").
+- **Compile** the DOCX file.
+- **Convert** the DOCX to PDF using headless LibreOffice.
+- **Verify** the page count using `pdfinfo` and warn you if the resume is longer than 2 pages.
+- **Render** a PNG preview of the first page using `pdftoppm`.
+
+To run *only* the anti-pattern check without building:
 ```bash
 for f in build_*.js; do node "$f"; done
 for d in ../out/*.docx; do node /path/to/resume-screener-loop/scripts/resume-check.js "$d" --jd "jd_$(basename "$d" .docx).txt"; done
