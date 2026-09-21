@@ -1,108 +1,53 @@
 # Profile Ingestion
 
-The skill's outputs are only as good as its inputs. This file is the checklist for gathering and processing profile material.
+The ledger is only as good as the sources read into it. This is the checklist for gathering and reading them. Output goes into `work/ledger.md` per `evidence-ledger.md`.
 
-## What to ask the user for
+## What to ask for
 
-Open with a short ingestion prompt if the user hasn't provided everything. Example:
+If the user has not supplied enough, open with one request:
 
-> To tailor this well I need to read your profile. Please share any of these you have:
-> - An existing resume (DOCX, PDF, or pasted text)
-> - Your portfolio, personal site, or business site URL
-> - GitHub repos for projects you want to highlight (or other code hosting)
-> - LinkedIn URL (or Indeed / job-app profile)
-> - Any supporting docs: certifications, transcripts, case studies, README files
+> To tailor this well I need to read your material. Share any of these:
+> - Your current resume (DOCX, PDF, or pasted text)
+> - LinkedIn URL (or a paste of the profile if it is private)
+> - Portfolio, personal, or company site
+> - Repositories or READMEs for projects you want considered
+> - Certificates, transcripts, case studies, published work
+> - Anything you want left off the resume, and anything you insist stays
 >
-> Then share the job spec: full JD, JD URL, or just title + company (I'll search).
+> And the job: full JD, a link, or title plus company (I will look it up).
 
-Don't proceed on thin inputs. The screener-pass will surface the gaps as resume weaknesses; better to gather the material up front.
+Do not proceed on thin inputs. The readers will surface the gaps as findings; better to have the material first.
 
-## Reading each input type
+## Reading each source
 
-### Existing resume
+**Existing resume.** For DOCX, run `node scripts/docx-text.js resume.docx` to see the parser's view; it also exposes contact details hiding in a header or text in a text box. Record identity, every role (title, organization, dates, scope, bullets), projects, skills (with whether each is claimed at production level), education, credentials. Note the voice (formal, casual, marketing) and existing anti-patterns so you do not inherit them. Ask whether the candidate wants their voice preserved.
 
-Read it cover to cover. Note these things in working memory:
+**LinkedIn and other profiles.** Fetch if permitted; otherwise ask for a paste. Cross-check titles, dates, and scope against the resume; record conflicts as questions. Capture recommendations, articles, and talks as artifact rows.
 
-- Identity: name, location, contact info, links.
-- Each role: title, organization, dates, scope statements, bullets. Note any anti-patterns (em dashes, fabricated metrics, marketing tone).
-- Each project: name, stack, scope, outcome.
-- Each skill: tool, framework, language. Note which are claimed at production level vs aspirational.
-- Education: degrees, schools, dates, relevant coursework.
-- Credentials: certifications, licenses.
+**Portfolio, personal, or company site.** Read the about, work, and methodology pages. Extract founding dates, named services or programs, stack named in public copy, differentiators, customer segments, concrete deliverables. Public copy is authoritative when it disagrees with the resume; record both and ask.
 
-Note the existing voice too. Some users want their existing voice preserved; others want it rewritten. If unclear, ask.
+**Repositories and READMEs.** Fetch the README (raw URL if the rendered page is noisy) and linked docs. Extract real stack with versions, architecture, deployment story, shipping discipline (CI, packaging, releases), evidence of users. Code often shows senior patterns (tests, observability, error handling) the resume understates; capture them as observed rows.
 
-### Portfolio / business site
+**Code and document samples.** Skim for named tools and libraries, complexity, and engineering discipline. Observed rows only; do not infer skills from a single file.
 
-`web_fetch` it. Read in full. Extract:
+**Certificates, transcripts, case studies.** Credentials that clear a hard row, coursework relevant to the matrix, described outcomes with scope.
 
-- Founding date and operational timeline.
-- Brand framing (named services, named programs, named methodologies).
-- Technical stack mentioned in public copy.
-- Differentiators ("only firm in X", "first to do Y").
-- Customer / industry segments named.
-- Specific deliverables described.
+**The conversation itself.** Preferences, constraints, and answers to questions are rows too (kind `constraint`, source `chat`, with the date).
 
-Cross-reference with the existing resume. Sometimes the public site has facts the resume omits (founding date corrections, integrated brand framing, specific program names). Always update from authoritative public sources.
+## Building the ledger
 
-### GitHub or code-hosting repos
+Aim for these groups, each with several rows:
 
-If the user names a repo, fetch the README. If the README links to other docs (CONTRIBUTING.md, docs/, etc.), consider fetching them.
+1. Identity and contact, including links the candidate allows.
+2. Production work with stakes: systems where reliability had consequences (paying users, missions, regulation).
+3. Customer-facing work: consulting, sales, enablement, training, with segments and audiences.
+4. Engineering depth: stacks with versions, architectures, scale facts with their basis.
+5. Cross-domain differentiators (legal plus AI, clinical plus data, defense plus software).
+6. Education and credentials with dates.
+7. Public artifacts: sites, repositories, articles, talks, products.
+8. Constraints: location, remote stance, travel tolerance, clearance status, authorization.
+9. Preferences: omissions, tone, roles to keep or drop, page budget.
 
-Extract:
+## When to stop reading and start the matrix
 
-- Languages and frameworks used (with versions).
-- Architecture (frontend, backend, infra, deployment).
-- Shipping discipline (CI, packaging, distribution).
-- Real users / paying users / production deployment evidence.
-- Open-source contribution patterns.
-
-Code samples sometimes reveal senior-level patterns (proper testing, observability, error handling) that the candidate's resume understates. Surface these.
-
-### LinkedIn / Indeed / job-app profile pages
-
-`web_fetch` the URL. Cross-check:
-
-- Title alignment with the resume.
-- Date alignment with the resume.
-- Scope statements that contradict the resume.
-- Any endorsements, recommendations, or articles that signal external validation.
-
-If LinkedIn says something the resume doesn't (e.g., a team size, a customer name), consider whether to add it to the resume.
-
-### Supporting documents
-
-Certifications, transcripts, project descriptions, case studies. Read for:
-
-- Credentials that strengthen weak quals (transcripts can substitute for engineering degree in some cases).
-- Specific named projects with described outcomes.
-- Coursework that matters for technical / quantitative roles.
-
-## Synthesizing the working profile
-
-After ingestion, write a working profile in scratch (not on the resume) with these sections:
-
-1. **Identity:** name, location, contact, links.
-2. **Production work with stakes:** systems where reliability has consequences (paying users, mission-critical, regulated).
-3. **Customer-facing work:** consulting, sales, training, enablement.
-4. **Engineering depth:** named stacks with versions, named architectures.
-5. **Cross-domain differentiators:** legal + AI, healthcare + AI, defense + AI, etc.
-6. **Education and credentials:** degrees, certifications, coursework.
-7. **Public-facing artifacts:** sites, repos, articles, talks.
-8. **Constraints:** location, travel willingness, clearance status, remote / hybrid / on-site preference.
-9. **User-stated preferences:** no GitHub, no specific dollar amounts, no em dashes (always), etc.
-
-This working profile is the source of truth for everything written into the resume.
-
-## When to stop ingesting and start writing
-
-You have enough to start when:
-
-- The candidate's primary discipline is clear.
-- The candidate's strongest production work is documented.
-- The candidate's named stack is clear.
-- The candidate's level (IC, senior, staff, principal) is clear.
-- Education and credentials are known.
-- Constraints (location, clearance, travel) are known.
-
-If any of these are missing, ask before writing.
+You have enough when the candidate's primary discipline, strongest production work, named stack, level, education, credentials, and constraints are all in the ledger with sources. If any group is empty and the target role would care, ask before drafting.

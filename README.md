@@ -1,142 +1,106 @@
 # resume-screener-loop
 
-A Claude skill that tailors a resume for a target job, then role-plays as the company's hiring screener to critique the resume, then applies the critique in a final revision pass.
+An agent skill that tailors a resume to a specific job, then attacks the draft the way the company's screening pipeline will, and revises until it survives. Works in any coding agent that reads `SKILL.md` (Claude Code, Codex CLI, Gemini CLI, Cursor, Copilot CLI, OpenCode, and others).
 
-Most resume-tailoring tools optimize for keyword matching. This skill adds a step most candidates would benefit from: an adversarial self-review by an in-character hiring screener calibrated to the target company. Findings from the screener pass feed back into a revision pass, producing a more defensible final draft.
+Most tailoring tools keyword-match against the JD and hand back a score. Real pipelines do something else: a parser extracts text, knockout questions filter, a recruiter scans for seven seconds, a hiring manager reads for depth, and an interviewer asks "how did you measure that?" This skill simulates each of those readers, and it refuses to write anything it cannot trace to the candidate's own evidence.
 
-## What it does
+## What it produces
 
-Given:
-- A candidate profile in any form (existing resume, portfolio site, project READMEs, code samples, LinkedIn / Indeed profile, supporting documents)
-- A target job in any form (full JD, JD URL, or title + company to search)
+Given a candidate's material (resume, LinkedIn, portfolio, repositories, certificates) and a job (pasted JD, URL, or title plus company):
 
-The skill produces:
-1. An honest fit assessment before any writing happens
-2. A tailored DOCX draft (ATS-friendly, 1-2 pages)
-3. An in-character screener critique, calibrated to the company's hiring archetype
-4. A revised final DOCX with the critique applied
-5. A cover note summarizing fit tier, what changed, and any honest stretch flags
+1. **Evidence ledger**: every fact from the sources, with provenance and, for numbers, the measurement basis. Bullets are written only from ledger rows; missing facts become questions for the candidate.
+2. **Requirements matrix and fit tier**: the JD decomposed into hard filters, soft preferences, responsibilities, and culture signals, each bound to evidence with a status. The fit tier follows from the matrix by rule, and the candidate hears it before any drafting.
+3. **ATS-safe DOCX plus plain text**, built with docx-js: US Letter, one column, standard sections, no tables or images or headers.
+4. **Mechanical gate**: `scripts/resume-check.js` extracts the text as a parser would and fails on layout hazards, hidden text, banned phrasing, AI-cadence openers, date problems, missing hard-requirement terms, and page budget. Zero dependencies.
+5. **Three-reader screen** on a blinded copy: recruiter scan, in-character hiring-manager deep read (run twice; only reproducible findings count), and a skeptic pass against the ledger.
+6. **Convergence**: revise, re-gate, re-screen, stop when the readers forward it or after three rounds, with a round log.
+7. **Cover note**: fit tier and matrix summary, what changed, residual risks, open questions, and interview probes with ledger-backed answers.
 
-## The hard rules
+## Hard rules
 
-The skill enforces these on every output:
+No em dashes. No number without a recorded measurement basis. No marketing tone or generated cadence. No overclaimed skills. No hidden, white, or tiny text, and no text addressed to an AI reader, even if asked. Honest fit tier before drafting. Blinded critique. Every bullet traces to evidence. Full list in [`SKILL.md`](SKILL.md) and [`reference/anti-patterns.md`](reference/anti-patterns.md).
 
-- No em dashes anywhere (replaced with commas, colons, semicolons, periods, or parentheses)
-- No fabricated metrics or percentages (every numeric claim must survive "how did you measure that?")
-- No marketing-tone language ("world-class", "passionate about", "thrilled to", "thought leader", etc.)
-- No overclaimed expertise (no production C / C++ unless real; no RLHF unless real)
-- Specificity over generality (named tools, named scope, named outcomes)
-- Honest fit assessment before tailoring
-- Respect for candidate preferences (no GitHub on resume if asked, etc.)
+## Install
 
-See [`reference/anti-patterns.md`](reference/anti-patterns.md) for the full enforcement checklist.
-
-## Installation
-
-Drop this folder into your Claude skills directory:
+Clone once, then link into every agent you use:
 
 ```bash
 git clone https://github.com/flowmar47/resume-screener-loop.git
-cp -r resume-screener-loop ~/.claude/skills/
-# or wherever your Claude environment loads user skills from
+cd resume-screener-loop
+./install.sh            # symlinks into each agent skills dir that exists (~/.claude/skills, ~/.codex/skills, ~/.gemini/skills, ~/.cursor/skills, ~/.copilot/skills, ~/.config/opencode/skills, ~/.agents/skills, and others)
+./install.sh --list     # show what would be linked
+./install.sh --copy     # copy instead of symlink
 ```
 
-In environments using SKILL.md auto-discovery (Claude Code with a `skills/` folder, Claude Apps with user skills, the Anthropic Skills system), the skill triggers automatically on relevant requests.
-
-For Anthropic's main Claude products, this skill currently runs in environments that support filesystem-based user skills. Future Anthropic products may surface skills differently; check current documentation.
-
-## Manual use (without skill auto-loading)
-
-You can also use this as a workflow reference outside the skill system. The methodology, templates, and reference docs are usable directly:
+Or with the skills CLI, which discovers the root `SKILL.md`:
 
 ```bash
-# Set up a working directory
-mkdir my_resume_project && cd my_resume_project
-
-# Copy the templates
-cp /path/to/resume-screener-loop/templates/lib.js .
-cp /path/to/resume-screener-loop/templates/content-template.js ./content.js
-cp /path/to/resume-screener-loop/templates/resume-template.js ./build_target_role.js
-
-# Install docx-js
-npm install docx --global
-
-# Edit content.js with your actual material
-# Edit build_target_role.js with the role-specific composition
-
-# Build
-NODE_PATH=$(npm root -g) node build_target_role.js
+npx skills add flowmar47/resume-screener-loop
 ```
 
-See [`templates/README.md`](templates/README.md) for the full build pipeline.
+Or copy the directory into one agent's skills folder by hand. The `SKILL.md` frontmatter follows the open Agent Skills specification, so any compliant agent picks it up.
 
-## Repository structure
+Runtime needs: Node 18+ (the checker has no dependencies; the DOCX builder needs `npm install docx` in your working directory), a web fetch or search tool or `curl`, and optionally LibreOffice for exact page counts.
+
+## Use
+
+In your agent, ask for what you want in plain words:
+
+> Tailor my resume for the Senior Backend Engineer role at Acme (JD pasted below). Here is my current resume and my LinkedIn.
+
+> Would a recruiter pass this? Screen it as OpenAI would for the AI Deployment Engineer role.
+
+> Is this resume ATS-safe? Check it against this posting.
+
+The skill asks for missing material, reports the fit tier with its gaps and questions, and then runs the loop. It never submits anything on your behalf.
+
+## Run the checker on its own
+
+```bash
+node scripts/resume-check.js Resume.docx --jd jd.txt --must "Python,Kubernetes" --text Resume.txt
+node scripts/resume-check.js Resume.docx --profile federal        # OPM two-page rule, MM/YYYY dates, hours per week
+node scripts/resume-check.js resume.md --target-pages 1           # new grad
+node scripts/docx-text.js Resume.docx                             # what a parser sees
+```
+
+Exit code 0 means no blockers. The keyword section is a diagnostic list for judgment, not a score; no employer system publishes one.
+
+## Repository layout
 
 ```
-resume-screener-loop/
-├── SKILL.md                     # Main entry point, the workflow Claude reads
-├── README.md                    # This file
-├── LICENSE                      # MIT
-├── reference/
-│   ├── workflow.md              # The 4-phase workflow in detail
-│   ├── anti-patterns.md         # Hard rules of what not to write
-│   ├── screener-personas.md     # How to role-play as hiring screener by company archetype
-│   ├── industry-trends.md       # 2025-2026 hiring trends to incorporate
-│   ├── profile-ingestion.md     # How to gather profile inputs
-│   └── jd-acquisition.md        # How to find / fetch JDs
-├── templates/
-│   ├── README.md                # Build pipeline guide
-│   ├── lib.js                   # docx-js helpers (Calibri, ATS-friendly)
-│   ├── content-template.js      # Composable content blocks pattern
-│   └── resume-template.js       # Per-resume builder template
-└── examples/
-    └── walkthrough.md           # Full 4-phase loop on a fictional candidate
+SKILL.md                      entry point any agent reads
+install.sh                    link the skill into every agent found on the machine
+scripts/
+  resume-check.js             mechanical gate (structure, style, dates, pages, keywords)
+  docx-text.js                zero-dependency DOCX text and structure extractor
+reference/
+  workflow.md                 the loop in detail
+  evidence-ledger.md          provenance format and rules
+  requirements-matrix.md      JD decomposition, fit-tier rules, keyword decisions
+  screener-critique.md        three readers, rubric, blinding, convergence
+  screener-personas.md        company and segment archetypes for the hiring-manager read
+  anti-patterns.md            banned phrasing and substitutions
+  ats-mechanics.md            what ATS vendors document, with sources
+  industry-trends.md          what changed recently, source-tagged
+  jd-acquisition.md           fetching and decomposing the JD
+  profile-ingestion.md        reading the candidate's material
+  agent-tooling.md            tool mapping per agent and fallbacks
+templates/
+  lib.js                      docx-js helpers (Letter, single column, ATS-safe)
+  content-template.js         shared content module pattern
+  resume-template.js          per-target builder
+  README.md                   build pipeline
+examples/walkthrough.md       one full loop on a fictional candidate, with real checker output
+CHANGELOG.md
 ```
 
-## The four phases
+## Why the extra machinery
 
-### 1. Profile and JD ingestion
-
-Read every profile input. Fetch any URLs. Extract the candidate's working profile. Acquire the JD (paste, URL, or search). Extract the JD's required quals, preferred quals, responsibilities, level, comp, location, travel, clearance, and cultural signals. Produce an honest fit assessment.
-
-### 2. Tailored draft
-
-Build a 1-2 page DOCX. Order experience by relevance, not date. Use JD vocabulary in bullets where the candidate's work genuinely matches. Name specific tools and frameworks. Run the anti-pattern checklist before declaring the draft done.
-
-### 3. In-character screener critique
-
-Role-play as the company's hiring screener. Frontier AI lab recruiters screen differently from defense TPM hiring managers from enterprise sales VPs from manufacturing directors. State the verdict, name what works, name what's wrong, name what would change the screener's mind.
-
-### 4. Revision pass
-
-Apply the findings. Re-run the anti-pattern checklist. Re-verify page count. Spot-check the rendered PDF. Deliver the final DOCX with a cover note.
-
-See [`SKILL.md`](SKILL.md) for the full workflow specification or [`reference/workflow.md`](reference/workflow.md) for the detailed walkthrough.
-
-## Honest stretch flagging
-
-The fit assessment is part of the deliverable, not an afterthought. If the candidate is a weak or very weak fit, the skill will say so and recommend either a different role at the same company or a stronger cover letter to bridge the gap. Some applications shouldn't be sent. The skill makes that visible.
-
-## When not to use this skill
-
-- For format conversion (DOCX → PDF, resume reformatting): use a dedicated tool.
-- For generic resume writing without a target role: this skill needs a JD to operate.
-- For LinkedIn profile rewrites: this skill targets resumes specifically.
-- For cover letters: this skill produces resumes; cover letters are a separate workflow.
-
-## Why this exists
-
-Resume tailoring tools have proliferated. Most are keyword-matching against the JD. Real hiring screeners do more than match keywords; they look for credibility signals, structural fit, and red flags. The screener-pass step is the missing layer between "tailored for the JD" and "would actually survive a recruiter screen."
+Two findings drove the redesign. First, models writing resumes invent plausible bullets; a provenance ledger turns "do not fabricate" into a check. Second, a single model critic is not a reliable judge: controlled studies show verdicts shifting with phrasing and with the name on the page. Multiple readers with distinct jobs, a fixed rubric, evidence grounding, blinding, and a repeat-run filter are the mitigations with evidence behind them. Sources are cited in `reference/ats-mechanics.md` and `reference/industry-trends.md`.
 
 ## Contributing
 
-PRs welcome for:
-- Additional screener archetypes (`reference/screener-personas.md`)
-- Updates to industry hiring trends (`reference/industry-trends.md`)
-- Refinements to anti-pattern enforcement (`reference/anti-patterns.md`)
-- Build pipeline improvements (`templates/`)
-
-Please don't PR worked examples; the `examples/` directory uses fictional candidates by design.
+Welcome: new personas, corrections to `ats-mechanics.md` with a primary source, checker rules with a test case, template improvements. Please keep examples fictional. Run the checker on any sample resume you add; it should pass.
 
 ## License
 

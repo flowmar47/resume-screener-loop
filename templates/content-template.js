@@ -45,10 +45,10 @@ const ROLE_1_HEADER = {
   dates: "2022 – Present",
 };
 
-// Variant A: customer-facing framing
+// Variant A: customer-facing framing. Trailing comments hold the ledger ids each bullet draws on.
 const ROLE_1_BULLETS_CUSTOMER = [
-  bullet("Bullet describing customer-facing work in this role with named tools and concrete outcomes."),
-  bullet("Another bullet calibrated to the customer-facing audience."),
+  bullet("Bullet describing customer-facing work in this role with named tools and concrete outcomes."), // [E1, E4]
+  bullet("Another bullet calibrated to the customer-facing audience."), // [E2]
 ];
 
 // Variant B: engineering framing

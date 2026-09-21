@@ -5,7 +5,7 @@
  *
  * Defaults:
  *   - Calibri 10pt body, 11pt section headers, 22pt name
- *   - 0.75" margins, US Letter
+ *   - 0.75" margins, US Letter (explicit; docx-js defaults to A4)
  *   - Single accent color for section headers (default: muted blue)
  *   - No tables for layout (ATS-safe)
  *   - No headers/footers (ATS-safe)
@@ -16,8 +16,7 @@
 
 const {
   Document, Packer, Paragraph, TextRun, ExternalHyperlink,
-  AlignmentType, HeadingLevel, BorderStyle, TabStopType, TabStopPosition,
-  LevelFormat, Indent,
+  AlignmentType, BorderStyle, TabStopType, TabStopPosition, LevelFormat,
 } = require("docx");
 const fs = require("fs");
 
@@ -74,6 +73,27 @@ function contact(parts) {
     alignment: AlignmentType.CENTER,
     spacing: { after: 80 },
     children: runs,
+  });
+}
+
+// ============================================================
+// Optional headline: the target title, directly under contact.
+// Use only when the ledger supports the title (recruiters scan for it).
+// ============================================================
+
+function headline(text) {
+  return new Paragraph({
+    alignment: AlignmentType.CENTER,
+    spacing: { before: 40, after: 120 },
+    children: [
+      new TextRun({
+        text,
+        bold: true,
+        size: SECTION_SIZE,
+        font: FONT,
+        color: ACCENT,
+      }),
+    ],
   });
 }
 
@@ -277,6 +297,7 @@ function buildDoc(children) {
       {
         properties: {
           page: {
+            size: { width: 12240, height: 15840 }, // US Letter in twips; A4 is 11906 x 16838
             margin: {
               top: PAGE_MARGIN_TWIPS,
               right: PAGE_MARGIN_TWIPS,
@@ -300,6 +321,7 @@ async function writeDoc(doc, outputPath) {
 module.exports = {
   name,
   contact,
+  headline,
   sectionHeader,
   summary,
   roleHeader,

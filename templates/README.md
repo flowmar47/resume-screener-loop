@@ -1,98 +1,75 @@
 # Templates
 
-These are the reusable build blocks the skill uses to produce DOCX output.
+The DOCX builder the loop uses. Node plus the `docx` package; the output is ATS-safe by construction: US Letter, single column, real heading paragraphs with a bottom border, real bullet numbering, no tables, images, headers, or footers.
 
 ## Files
 
-- `lib.js`, Docx-js wrapper functions (Calibri 10pt, ATS-friendly layout, sensible defaults). Don't modify unless you want to change the visual style.
-- `content-template.js`, Pattern for factoring shared candidate content into a content module with role-specific variants. Copy to `content.js` in your working directory and fill in with the candidate's actual material.
-- `resume-template.js`, Per-resume builder. Copy once per target role, point to your content module, and compose.
+- `lib.js`: docx-js helpers (Calibri 10pt body, 11pt section headers, 22pt name, 0.75-inch margins). Constants at the top control font, accent color, sizes, margins, and paper size.
+- `content-template.js`: pattern for factoring one candidate's material into a content module with per-audience variants. Copy to `content.js` and fill from the ledger.
+- `resume-template.js`: per-target builder. Copy once per role, import the content module, compose in matrix order.
 
 ## Setup
 
-This pipeline assumes Node.js and a couple of npm packages.
-
 ```bash
-# In your working directory
-npm install docx --global       # or local; either works
+mkdir -p work out && cd work
+cp /path/to/resume-screener-loop/templates/lib.js .
+cp /path/to/resume-screener-loop/templates/content-template.js ./content.js
+cp /path/to/resume-screener-loop/templates/resume-template.js ./build_target_role.js
+npm init -y >/dev/null && npm install docx
 ```
 
-For DOCX→PDF conversion (page count verification and visual spot-check), you also need LibreOffice headless:
+Install locally in the working directory; do not install globally.
+
+Optional, for exact page counts and PDF output: LibreOffice (`brew install --cask libreoffice` on macOS, `apt-get install libreoffice` on Debian and Ubuntu). Without it the checker estimates pages and says so.
+
+## Build one resume
+
+1. Fill `content.js` from the ledger. Every bullet you write should have ledger ids in a trailing comment while you work.
+2. In `build_target_role.js`, compose sections in the order the matrix calls for, pick the bullet variants for this audience, set the clearance line if needed, set the output path.
+3. Build and check:
 
 ```bash
-# Ubuntu/Debian
-apt-get install libreoffice
-
-# macOS
-brew install --cask libreoffice
+node build_target_role.js
+node /path/to/resume-screener-loop/scripts/resume-check.js ../out/Resume_First_Last_Role.docx \
+  --jd jd.txt --must "Go,Kubernetes" --text ../out/Resume_First_Last_Role.txt
 ```
 
-## Build pipeline
+Fix blockers and majors, rebuild, rerun. The `--text` output is the plain-text deliverable for paste-in application forms.
 
-Pattern for building one resume:
+## Batch tailoring
+
+One `build_*.js` per target role, all importing the same `content.js`:
 
 ```bash
-# Make a working directory
-mkdir resumes && cd resumes
-
-# Copy the templates
-cp /path/to/skill/templates/lib.js .
-cp /path/to/skill/templates/content-template.js ./content.js
-cp /path/to/skill/templates/resume-template.js ./build_target_role.js
-
-# Edit content.js with the candidate's actual experience
-# Edit build_target_role.js with the role-specific composition
-
-# Build
-NODE_PATH=$(npm root -g) node build_target_role.js
-# Wrote: /path/to/output/Resume_FirstLast_RoleName.docx
+for f in build_*.js; do node "$f"; done
+for d in ../out/*.docx; do node /path/to/resume-screener-loop/scripts/resume-check.js "$d" --jd "jd_$(basename "$d" .docx).txt"; done
 ```
 
-For multiple resumes (batch tailoring), create one `build_*.js` script per target role and run them in sequence:
+## PDF and exact page count
 
 ```bash
-for f in build_*.js; do
-  NODE_PATH=$(npm root -g) node "$f"
-done
+soffice --headless --convert-to pdf --outdir ../out ../out/Resume_First_Last_Role.docx
 ```
 
-## DOCX to PDF (for page count verification)
-
-```bash
-# Convert
-libreoffice --headless --convert-to pdf Resume_*.docx
-
-# Check page count
-pdfinfo Resume_*.pdf | grep Pages
-
-# Visual spot-check (render page 1 to PNG)
-pdftoppm -r 130 -f 1 -l 1 Resume_*.pdf page -png
-```
-
-If a resume runs over two pages, tighten:
-- Drop secondary roles to short variants.
-- Compress skill sections to 3-4 categories.
-- Remove "Additional" sections that aren't pulling weight.
-- Tighten the summary.
+The checker runs this itself when `soffice` is on the PATH and reports the measured count. Over budget: shorten older roles to two bullets, merge skill lines, cut the weakest lead-role bullet, tighten the summary.
 
 ## Style overrides
 
-To change the font, accent color, font sizes, or margins, edit the constants at the top of `lib.js`:
+Edit the constants at the top of `lib.js`:
 
 ```js
-const FONT = "Calibri";          // try "Helvetica", "Inter", "Source Sans"
-const ACCENT = "1B4F72";         // hex without #, try "0F4C75", "8B4513", "222222"
-const BODY_SIZE = 20;            // half-points: 20 = 10pt; 22 = 11pt
+const FONT = "Calibri";          // Cambria, Georgia, Garamond, Arial, Lato, Inter also parse fine
+const ACCENT = "1B4F72";         // hex without #; one accent color only
+const BODY_SIZE = 20;            // half-points: 20 = 10pt, 22 = 11pt
 const SECTION_SIZE = 22;
-const NAME_SIZE = 44;            // 44 = 22pt
-const PAGE_MARGIN_TWIPS = 1080;  // 1080 = 0.75 inch; 1440 = 1.0 inch
+const NAME_SIZE = 44;            // 22pt
+const PAGE_MARGIN_TWIPS = 1080;  // 0.75 inch; 720 = 0.5 inch (federal), 1440 = 1 inch
 ```
 
-For ATS safety, keep:
-- Single column layout
-- Standard section headers
-- No images
-- No tables for layout
-- No headers / footers
+Paper size is set in `buildDoc()`; the default is US Letter (12240 x 15840 twips). For A4 markets use 11906 x 16838 and run the checker with `--paper a4`.
 
-These are the defaults; don't override unless you have a specific reason.
+Keep, regardless of overrides: one column, standard section names, no tables for layout, no images, nothing in headers or footers. The checker flags every one of these.
+
+## Without Node
+
+Write the resume as Markdown with the same section names (Professional Summary, Experience, Selected Technical Skills, Education) and role header lines of the form `Title | Organization | Mon YYYY – Mon YYYY`, convert with `pandoc resume.md -o Resume.docx`, and run the checker on the `.md` or the `.docx`. Pandoc's default DOCX is single-column with real headings and bullets.

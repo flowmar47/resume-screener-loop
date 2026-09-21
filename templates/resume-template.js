@@ -7,23 +7,24 @@
  *
  * Pattern:
  *   1. Build a children array using helper functions.
- *   2. Order experience by relevance to the target JD, not chronologically.
- *   3. Pick the right variant for each role (CUSTOMER vs ENG vs PROGRAM).
- *   4. Choose the right clearance bullet level if defense / government.
- *   5. Use EDU_ENG_EMPHASIS for engineering-credibility roles.
+ *   2. Order experience by relevance to the requirements matrix, then by date.
+ *   3. Pick the bullet variant for this audience (CUSTOMER vs ENG vs PROGRAM).
+ *   4. Set the clearance line to the level the JD names (defense / government).
+ *   5. Use EDU_ENG_EMPHASIS when the matrix has a fundamentals row.
+ *   6. Every bullet in content.js carries its ledger ids in a comment.
  *
- * Usage:
- *   NODE_PATH=$(npm root -g) node resume-codex-de.js
- *
- * Output:
- *   /path/to/output/Resume_FirstLast_RoleName.docx
+ * Usage (after `npm install docx` in this directory):
+ *   node build_target_role.js
+ *   node ../scripts/resume-check.js ../out/Resume_FirstLast_RoleName.docx --jd jd.txt
  */
 
 const {
-  name, contact, sectionHeader, summary, buildDoc, writeDoc,
+  name, contact, headline, sectionHeader, summary, buildDoc, writeDoc,
   roleHeader, roleNote, bullet, skillLine,
 } = require("./lib");
 const C = require("./content"); // adapt path to your content file
+
+const OUTPUT = "../out/Resume_FirstLast_RoleName.docx";
 
 function build() {
   const c = [];
@@ -32,13 +33,14 @@ function build() {
   c.push(name("FIRST LAST"));
   c.push(contact(C.CONTACT_LINE_1));
   c.push(contact(C.CONTACT_LINE_2));
+  c.push(headline("Target Title As The JD Names It")); // optional; drop if the ledger does not support the title
 
   // -------- Summary --------
   c.push(sectionHeader("Professional Summary"));
   c.push(summary(
-    "Four to six sentence summary. Lead with years of experience and primary discipline. " +
-    "Name the differentiating production work. Include 2-3 specific tools or domains relevant to the JD. " +
-    "Close with constraint statement (clearance, travel, remote willingness)."
+    "Three to five sentences. Years and discipline; the differentiating production work; " +
+    "two or three tools or domains the matrix's hard rows name; a closing constraint that " +
+    "pre-answers a knockout question (clearance, location, remote stance, authorization)."
   ));
 
   // -------- Relevant Experience --------
@@ -83,5 +85,5 @@ function build() {
 // ----- Run -----
 (async () => {
   const doc = buildDoc(build());
-  await writeDoc(doc, "/path/to/output/Resume_FirstLast_RoleName.docx");
+  await writeDoc(doc, OUTPUT);
 })();

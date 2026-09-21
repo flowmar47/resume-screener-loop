@@ -1,180 +1,127 @@
-# Workflow: The Four Phases In Detail
+# Workflow: The Loop in Detail
 
-Use this when SKILL.md's summary isn't enough.
+Use this when `SKILL.md` is not enough. Each phase lists its inputs, its output artifact, and the checkpoint that ends it. Working artifacts live in a scratch directory (`work/`); deliverables in `out/`.
 
-## Phase 1: Profile and JD ingestion
+## Phase 0: Intake
 
-### Profile ingestion checklist
+**Collect**
 
-Run through every source the user has provided:
+- Profile inputs: existing resume, LinkedIn or other profile pages, portfolio or company site, repositories and READMEs, code or document samples, certificates, transcripts.
+- Job inputs: pasted JD, JD URL, or title plus company (then search; see `jd-acquisition.md`).
+- Candidate preferences: omissions (no GitHub, no dollar figures), tone, location and remote stance, page budget, anything they want kept.
+- Segment: standard, US federal, academic, executive, new grad, or another national norm.
 
-1. **Existing resume.** Read it cover to cover. Note: identity (name, location, contact, links), every role with dates and scope, every project, every skill, education, credentials. Note also: the existing voice (formal? casual? technical? marketing-tone?) and any anti-patterns already present.
+**Checkpoint**: you can name the candidate's primary discipline, their strongest production work, their level, and the target role's company and title. If not, ask before reading further.
 
-2. **Portfolio / personal site / business site.** `web_fetch` it. Read the about page, the work / services page, the methodology page. Pull: founding date, integrated brand framing, named methodologies or programs, technical stack mentioned in public copy, named differentiators.
+## Phase 1: Evidence ledger
 
-3. **Project READMEs.** Read in full if they're attached. If a GitHub repo is named, `web_fetch` the README (note: GitHub READMEs sometimes need the raw URL). Extract: real stack (languages, frameworks, versions), real architecture, real deployment story, real shipping discipline (CI, packaging, distribution).
+Read every source completely. For DOCX inputs, run `node scripts/docx-text.js old-resume.docx` to see what a parser sees and to catch text hidden in headers or text boxes. Build `work/ledger.md` per `evidence-ledger.md`.
 
-4. **Code or document samples.** Skim for: complexity of work, named tools, named libraries, evidence of senior-level patterns (testing, observability, error handling).
+While reading, also note:
 
-5. **LinkedIn / Indeed profile pages.** `web_fetch` if a URL is given. Cross-check titles, dates, and scope statements against the resume.
+- The existing resume's voice and its anti-patterns (em dashes, unmeasured percentages, marketing tone) so you do not carry them forward.
+- Conflicts between sources (titles, dates, team sizes). Record both versions; they become questions.
+- Facts the old resume omits but public artifacts show (a shipped product, a talk, a certification).
 
-6. **Supporting documents.** Read certifications, transcripts, project descriptions for additional credentials or coursework that could matter for the target JD.
+**Output**: the ledger and a questions list.
+**Checkpoint**: every source has been read and every fact you intend to use has a row.
 
-### JD acquisition
+## Phase 2: Requirements matrix and fit tier
 
-If the user provides:
-- **Full JD text:** read it.
-- **JD URL:** `web_fetch` it. Read the resulting page in full.
-- **Title + company only:** `web_search` for "{Company} {Title} careers" or "{Company} jobs {Title}". Fetch the most relevant result. Confirm the listing is current.
-- **Just a title:** ask the user which company. Don't guess.
+Read the JD in full. Decompose into atomic rows per `requirements-matrix.md`: hard filters, soft preferences, responsibilities, culture signals, plus the knockout questions the application form will ask even if the JD does not state them (authorization, location, years, credential, clearance). Bind evidence rows, set statuses, compute the tier by the table's rules.
 
-### JD extraction
+Also record from the JD: level signal (years range, title decoration, scope language), compensation band if posted, location and travel, company archetype (this picks Reader B's persona later).
 
-From the JD, extract and write down (in working notes, not on the resume):
+**Report to the candidate** in one message: tier, unmet hard rows, adjacent rows with the bridge you plan to use, and the batched questions. On weak or very weak fit, recommend an alternative and wait for their call.
 
-- **Required qualifications**, these are hard filters. The candidate must clear each one or have a defensible substitute.
-- **Preferred qualifications**, these are soft filters. Each one met raises the ranking.
-- **Responsibilities**, what the role actually does day-to-day. Tailor bullets to mirror these.
-- **Level signal**, IC, senior IC, staff, principal, manager, director. The resume must match this level in scope language.
-- **Compensation range**, informs how much gravitas the resume needs.
-- **Location, travel, clearance**, non-negotiable inputs. Add a clearance line if the JD requires one.
-- **Cultural signals**, values, mission language, repeated themes. For mission-driven companies (frontier AI labs, defense, healthcare), align the summary tone.
+**Output**: `work/matrix.md`, the fit report, answers to the questions folded back into the ledger.
+**Checkpoint**: the candidate has seen the tier and said to proceed (or the fit is moderate or better and they asked you to just do it).
 
-### Honest fit assessment
+## Phase 3: Draft
 
-Before writing anything, score the candidate's fit against the JD's required and preferred quals. Use a five-tier scale:
+### Structure
 
-| Tier | Meaning |
-|---|---|
-| **Strong** | Meets or exceeds all required quals plus most preferred quals. Submit. |
-| **Moderate-strong** | Meets all required quals plus some preferred quals. Submit with confidence. |
-| **Moderate** | Meets all required quals with at least one defensible adjacency for any borderline quals. Submit. |
-| **Weak** | One required qual is unmet with no defensible substitute, or multiple preferred quals are missing. Flag to the user; submit only if they want to. |
-| **Very weak** | Multiple required quals unmet. Flag clearly; recommend a different role at the same company. |
+Default order for experienced candidates: name and contact; optional headline line matching the target title when the ledger supports it; summary (three to five sentences); experience; skills; selected projects or public work (engineering, developer-relations, AI-deployment, design, and customer-facing roles); clearance and eligibility (defense and government); education. New grads and academics move education up. Sales roles add quota attainment per role. Executives add a board or advisory section and lead with scope of authority.
 
-**Tell the user the score before tailoring.** If they want to proceed on weak / very weak fit, fine, but they should know.
+Order roles by relevance to the matrix, then by date within equal relevance. Every role shows title, organization, and Month YYYY dates on its header line; an italic one-line note under the header can carry context that does not fit a bullet.
 
-## Phase 2: Tailored draft
+### Summary
 
-### Structure choices
-
-Order experience by relevance to the JD, not by date. Recent + relevant is best; older + relevant beats recent + irrelevant. Pick the most-relevant role to lead.
-
-### Section order options
-
-Default order:
-1. Name + contact (top of page)
-2. Professional Summary (4-6 sentences)
-3. Relevant Experience (bulk of the resume)
-4. Selected Technical Skills (categorized; 3-5 categories)
-5. Selected Public Work / Selected Projects (for customer-facing or engineering roles)
-6. Clearance & Eligibility (if defense / government)
-7. Education
-
-For credentials-heavy roles (academic, government, regulated): consider putting Education earlier.
-
-For sales / customer-facing roles: consider a "Selected Engagements" or "Customer Outcomes" section.
-
-For engineering roles: lead with experience; skills come after.
-
-### Summary writing
-
-A good summary is 4-6 sentences that:
-1. State years of experience and primary discipline.
-2. Name the differentiating production work (a system, a portfolio, a track record).
-3. Name 2-3 specific tools or domains relevant to the JD.
-4. Close with a constraint statement that pre-answers a screener's question (clearance, travel, remote / hybrid willingness, language fluency).
-
-Avoid: opening with "I am passionate about...". Avoid: claiming "X years of experience in Y" if X is less than the JD requires (be honest).
+Three to five sentences: years and discipline; the differentiating production work; two or three tools or domains the matrix's hard rows name; a closing constraint that pre-answers a knockout question (clearance, location, remote stance, authorization). No first person, no "passionate", no objective statement.
 
 ### Bullets
 
-- Start with a strong action verb: Built, Designed, Operate, Lead, Architect, Coordinate, Ship, Deliver, Maintain.
-- Name specific tools, frameworks, and methodologies actually used.
-- Include scope when honest: "cross-functional teams of 15+", "concurrent multi-year engagements", "production system with paying users".
-- Avoid passive voice unless it improves clarity.
-- Bullets should be 1-3 lines each. Avoid one-line bullets that say nothing; avoid five-line bullets that read as paragraphs.
+- Shape: outcome or scope first when the ledger has it, then the mechanism and the named tools. Google's "accomplished X as measured by Y by doing Z" is the model when a measured Y exists; when it does not, qualify (scale, cadence, audience, before and after state) rather than invent.
+- One to two lines. A bullet over two lines is two bullets or one tighter bullet.
+- Distinct specific opening verbs; no opener repeats more than twice in the document; none from the AI-cadence set (spearheaded, leveraged, orchestrated, utilized, championed).
+- Up to six bullets for the lead role, two to four for older roles, one or two for roles kept only for timeline continuity.
+- Annotate each bullet in the working copy with its ledger ids.
 
-### Skill section
+### Skills block
 
-Group into 3-5 categories, named after what the screener will look for:
-- "LLM & Agentic Systems"
-- "Engineering Stack"
-- "Customer-Facing Delivery"
-- "Linux Systems"
-- "AI Coding Tools"
+Three to five categories named for what the reader searches ("Languages", "Infrastructure", "LLM and agentic systems", "Customer-facing delivery"). Hard skills only, each traceable to a bullet or artifact. Around fifteen terms total; no soft-skill lists. Use the JD's exact term for every hard row, and carry both forms of a searched acronym once.
 
-Inside each category, list 5-15 specific items separated by commas. Don't list aspirational skills.
+### Segment gates
 
-### DOCX generation
+Before building, run the gate for the segment:
 
-Use the template in `templates/lib.js` plus `templates/resume-template.js`. See `templates/README.md` for usage.
+- **Sales**: quota attainment (percent, period) and deal or account scope per role, President's Club or equivalent in the top third.
+- **Clinical and healthcare**: credentials after the name in most-permanent-first order (degree, license, certifications); active license repeated under the contact block; unit, patient population, and volume per role.
+- **Finance and consulting**: GPA when 3.5 or higher, school and graduation year, deal or engagement list with sizes when the candidate is allowed to state them.
+- **US federal**: two pages hard; MM/YYYY dates; hours per week per position; series and grade for federal roles; align each description to the announcement's stated qualifications; no supervisor or salary lines unless the announcement asks.
+- **Executive**: two pages; scope of authority (P&L, headcount, geography); board and governance work; transformation outcomes with measured numbers from the ledger.
+- **New grad**: one page; education first with relevant coursework and projects; internships and projects carry the bullets.
+- **Career changer**: hybrid, never functional; a bridge sentence in the summary; transferable scope stated in the target field's vocabulary with a truthful equivalence.
+- **International**: match the target market's norms (UK CV: two pages, no photo; several EU markets: photo and birth date still customary; Australia: two to three pages). Ask if unsure.
 
-## Phase 3: In-character screener critique
+### Build
 
-### Set the persona
+Generate the DOCX with the templates (`templates/README.md`). The default output is US Letter, Calibri 10pt body, 0.75-inch margins, single column, standard headings, real bullet numbering, no headers or footers. Also write the plain-text version for paste-in forms.
 
-Before reading the draft, declare the persona out loud: "Hiring agent at {Company}, screening for {Role}. Bar: {summary of what they want}. Reading this resume as that person."
+**Output**: `out/Resume_First_Last_Role.docx`, `out/Resume_First_Last_Role.txt`, the annotated working copy.
 
-The persona is specific to the role:
-- Frontier AI lab recruiter → screens for production-AI credibility, public work, mission alignment.
-- Defense TPM hiring manager → screens for cleared work, multi-stakeholder execution, government-customer interfaces.
-- Enterprise sales VP → screens for named accounts, quota attainment, executive presence.
-- Startup CTO → screens for shipped products, full-stack chops, end-to-end ownership.
-- Manufacturing director → screens for aerospace / regulated manufacturing experience, span of control, safety record.
+## Phase 4: Mechanical gate
 
-See `screener-personas.md` for the full archetype list.
+```bash
+node scripts/resume-check.js out/Resume_First_Last_Role.docx \
+  --jd work/jd.txt \
+  --must "Go,Kubernetes,PostgreSQL,Bachelor" \
+  --text out/Resume_First_Last_Role.txt
+```
 
-### Critique structure
+Options: `--target-pages 1` (new grads), `--profile federal` (USAJOBS: two-page cap, MM/YYYY dates, hours per week), `--paper a4` (non-US markets), `--strict` (majors fail too), `--json` (machine-readable).
 
-For each resume, write:
+Read the report top to bottom:
 
-1. **Verdict at 30 seconds.** Forward / borderline / reject. State this first.
-2. **What works.** 2-4 specific things that land. Avoid generic praise.
-3. **What's wrong.** 4-10 specific things, in priority order. Be the screener: harsh, specific, and accurate.
-4. **What would change my mind.** 1-3 things the candidate could add or change.
-5. **Outcome.** Forward, forward-flagged, borderline-hold, or reject.
+- **BLOCKER** and **MAJOR**: fix, rebuild, rerun.
+- **VERIFY quantified-claims**: every listed claim must map to a ledger row with a basis. No basis, rewrite qualitatively.
+- **VERIFY jd-terms-missing**: classify each term (gap, wording mismatch, irrelevant) per `requirements-matrix.md`. Update the matrix if a term reveals a requirement you missed.
+- **INFO page-budget**: an estimate unless LibreOffice is installed; treat an estimate at the limit as over.
+- **Top-third preview**: this is what Reader A will see; if the current title, company, and dates are not in it, restructure before screening.
 
-### Honest critique discipline
+**Checkpoint**: exit code 0 with no blocker or major findings.
 
-The critique is the value of the loop. Soft critiques lead to resumes that fail in real screens. Be hard on the draft.
+## Phase 5: Three-reader screen
 
-Specific things to look for:
-- Years-of-experience requirements: does the resume cleanly state the years the JD requires?
-- Required language requirements: if the JD requires C / C++ / Go / Rust, is it in the resume as production work, not "comfortable reading"?
-- Clearance: is it stated at the right level?
-- Domain crossover: if the candidate is pivoting fields, is there a bridge sentence?
-- Customer logos / industries: for customer-facing roles, is segment specificity present?
-- Public technical content: for engineering / dev-tools / DevRel roles, is there evidence of public-facing work?
-- Mission alignment: for mission-driven companies, is there any signal of why this company specifically?
-- Founder-title overload: too many founder roles?
-- Marketing-tone bleed: any banned phrasing leaked in?
+Blind the draft, then run Readers A, B (twice), and C per `screener-critique.md`. Pick Reader B's archetype from `screener-personas.md` using the JD's language and company type. Record findings with axis, severity, quoted line, and fix in `work/findings-round-N.md`.
 
-### When tailoring multiple resumes in one session
+For batch tailoring, screen each draft individually first, then compare matrices and findings across drafts for systemic issues.
 
-Screen each individually. Then write a synthesized findings section that surfaces patterns across the drafts. These patterns often reveal systemic improvements that no single screen would catch.
+**Output**: the findings file and three verdicts.
 
-## Phase 4: Revision pass
+## Phase 6: Revise and converge
 
-### Apply the findings
+For each surviving finding decide: structural fix (reorder, move a role, drop a section), content addition (a bullet, a bridge clause, a clearance line; only from the ledger or a fresh candidate answer), content removal (marketing phrase, unmeasured number, irrelevant role), or framing change (describe the work instead of praising it).
 
-For each finding from Phase 3, decide:
-- **Structural fix.** Reorder sections, move a role earlier, drop a section.
-- **Content addition.** Add a bullet, a sentence, a skill line, a clearance line.
-- **Content removal.** Drop a marketing-tone phrase, a fabricated metric, an irrelevant section.
-- **Framing change.** Replace a self-referential claim with a description of the work.
+Apply, rebuild, rerun Phase 4, re-screen the affected readers. Log the round. Stop per the convergence rules (no blocker or major, A forward, B forward or forward-flagged on something only the candidate can change, last round changed nothing material), or after three rounds.
 
-### Re-verify
-
-After revision:
-- Run the anti-pattern checklist again.
-- Build the DOCX and verify page count (PDF render via LibreOffice headless is the most reliable way; `pdfinfo` for page count).
-- Spot-check one or two PDFs visually for layout.
-
-### Deliver
+## Phase 7: Deliver
 
 Provide:
-- The final DOCX (and a zip if multiple).
-- A cover note summarizing fit tier per resume, what changed in the final pass, and any honest stretch flags the user should know.
 
-The cover note is part of the deliverable. It's where the honest fit assessment lives in writing.
+- The DOCX (and PDF if rendered), the plain-text version, and a zip when there are several.
+- The cover note: fit tier and matrix summary; what changed per round; residual findings and risks; open questions; a reminder that the candidate reviews and submits, not you.
+- Interview probes: each claim Reader C pressed on, with the ledger-backed answer.
+- For batch work, the cross-resume patterns and the one or two systemic fixes worth the candidate's time (a public artifact to ship, a certification to finish, a LinkedIn alignment).
+
+Before sending, reread the deliverable once as the candidate: is every sentence something they can say out loud in an interview without flinching? If not, it is not done.

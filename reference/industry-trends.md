@@ -1,132 +1,55 @@
-# Industry Hiring Trends (2025–2026)
+# Hiring Trends That Change the Draft (updated September 2026)
 
-These are patterns the skill should incorporate into draft and critique. Update this file periodically; trends shift faster than skill code.
+Facts here carry a tag: **documented** (primary source), **reported** (credible secondary), or **consensus** (practitioner agreement, no strong data). Numbers that circulate only through career-advice blogs citing each other are left out on purpose. Update this file when a source changes; the loop's rules should follow the evidence, not the other way around.
 
-## ATS systems are still scanning resumes
+## The federal resume is now two pages
 
-Applicant tracking systems remain the first pass at most companies above ~50 employees. The implication for resumes:
+Documented. OPM's Merit Hiring Plan prohibited the long-form federal resume; from 2025-09-27 USAJOBS enforces a two-page cap on stored, uploaded, and builder resumes, and over-length applications are ineligible. Questionnaires no longer rank candidates (from 2025-09-30); structured resume reviews and validated assessments do. Any advice still recommending a four-to-six-page federal resume is wrong. The skill's `--profile federal` encodes the cap, MM/YYYY dates, and hours per week. Sources in `ats-mechanics.md`.
 
-- Use standard section headers ("Professional Summary", "Experience", "Education") so the parser recognizes them.
-- Avoid graphical layouts, columns, and tables. ATS parsers still struggle with these in 2025-2026 despite vendor claims.
-- Don't use images for text. Don't use headers / footers for critical content (some parsers miss them).
-- Save as `.docx` for upload. PDFs work but `.docx` is the safest cross-platform format.
+## ATS systems rank and filter; they do not score-reject
 
-The skill's default DOCX template is ATS-friendly by design (single column, standard headers, no images, no tables for layout).
+Documented. Greenhouse, Ashby, Eightfold, and Workday's HiredScore state that they do not auto-reject on a match score. Auto-rejection comes from knockout questions on the application form. Implications: make the resume consistent with the form answers (years, location, authorization, clearance), use the JD's exact terms so recruiter searches find the candidate, and stop treating third-party "ATS scores" as anything but keyword-overlap diagnostics.
 
-## Keyword matching is alive and well
+## LLMs read resumes now, on both sides
 
-ATS systems still keyword-match JD vocabulary against resume vocabulary. The strategy:
+Documented for the tools; reported for recruiter behavior. LinkedIn's Hiring Assistant reviews applicants against recruiter criteria and was generally available by September 2025. Ashby, Workday, iCIMS, and Greenhouse ship LLM summarization or per-criterion evaluation. Meanwhile recruiters report a flood of generated resumes and name the tells: uniform tone, "spearheaded" and "leveraged" openers, buzzword strings, bullets with no company-specific detail, achievements with no measurable or qualified outcome. Specific, verifiable statements survive both the summarizer and the human; generated cadence fails the human.
 
-- Echo specific tool names, frameworks, and methodologies that the JD uses.
-- Do not echo aspirational tools the candidate hasn't used.
-- Don't keyword-stuff. The screener reads after the ATS does.
+## Hidden text and prompt injection are detected
 
-## AI in hiring
+Documented. Indeed published its work on detecting resume-based prompt injection and separating resume content from model instructions. White text, tiny text, and "ignore previous instructions" lines are extracted by parsers and flagged by screening tools. The checker fails on all of them.
 
-Many companies now use AI to screen resumes. This affects how the screener-pass persona should be calibrated:
+## Model-based screeners are biased, and people defer to them
 
-- The first reader may be an AI summarizer. Specific facts and verifiable claims survive AI summarization better than vague claims.
-- AI screeners do not yet detect marketing tone well; human screeners do. The honest framing still matters because the second reader is human.
-- Companies vary widely in disclosure of AI screening. Don't try to game the AI; write for the human.
+Documented. Name-swap studies (2024) found large language models favoring some demographic groups' names on identical resumes; a 2025 study found people followed a biased model's recommendation most of the time even when they rated it poorly. The skill blinds its own critique and refuses to optimize for demographic or prestige signals.
 
-## Public technical work is a growing differentiator
+## Recruiters scan before they read
 
-For engineering / DevRel / dev-tools / AI-deployment roles, evidence of public technical work raises rank significantly:
+Documented (Ladders eye-tracking, 2018 update: about seven seconds on the first pass, F or E pattern, fixations on current title and company, dates, previous title, education). Layouts that failed: cluttered pages, multiple columns, long sentences, missing section and job headers, keyword stuffing. The top third of page one and the skills block decide whether a deep read happens.
 
-- Open-source contributions (commits, PRs, issues)
-- Technical blog posts, talks, conference appearances
-- Open-source side projects with real users
-- Documented production systems with public-facing surfaces
+## Two pages is normal for experienced candidates
 
-If the candidate has any of these, surface them in a "Selected Public Work" section. If the candidate has none, this is a real gap and the screener-pass should flag it.
+Documented (ResumeGo hiring simulation, 2018, 482 screeners, 7,712 resumes): two-page resumes were preferred about 2.3 times as often overall, more strongly for mid-level and managerial roles. One page remains right for new grads. Executives stay at two. Academic CVs run as long as the record.
 
-## Remote-first vs return-to-office split
+## Public technical work differentiates engineering and AI-deployment roles
 
-In 2026 the remote / hybrid / on-site split is firmly back to fully heterogeneous. Each company has its own pattern. The implication:
+Consensus, strong. Open-source contributions, technical writing, talks, and documented production systems raise rank for engineering, developer-relations, developer-tools, and AI-deployment roles. Surface them in a Selected Public Work section; when the candidate has none, say so in the fit note rather than inventing weight elsewhere.
 
-- Match the resume's stated work-preference to the JD's stated work-location.
-- If the JD is on-site and the candidate is remote, the resume should signal willingness to relocate or be on-site.
-- "Open to NYC or fully remote" in the contact line addresses this directly.
+## AI-deployment roles are a category
 
-## Clearance gates are tighter
+Consensus. "AI Deployment Engineer", "Forward Deployed Engineer", "AI Solutions Engineer", and "Member of Technical Staff, Applied" share a bar: five to eight years customer-facing technical work, production AI deployment, workshop and enablement delivery, program coordination across stakeholders, fluency with the major model APIs and at least one self-hosted stack. Reader B checks for production agentic credibility, workshop evidence with audience and topic, named industries, and security and compliance fluency.
 
-In defense and federal roles, the clearance bar has tightened. Implications:
+## Title inflation and founder claims draw verification
 
-- "Willing to apply for and maintain" is acceptable for entry-level / experienced individual contributors.
-- For senior IC / manager / director roles, an active clearance is increasingly required.
-- The clearance level matters: a Secret-required role won't accept "willing to obtain TS"; phrase it specifically.
+Reported (HR Dive, 2025, on title inflation; recruiter write-ups on founder claims). Titles and dates are cross-checked against LinkedIn; founder and self-employed roles get extra scrutiny because there is no HR department to verify against. Keep titles identical across sources and describe founder work by what was built and sold.
 
-## Comp ranges in JDs
+## Gaps: label, do not hide
 
-US-based JDs now post comp ranges by state law in many jurisdictions. The implication:
+Reported, direction consistent across surveys: many managers still read an unexplained gap negatively, and most say an explained gap is fine. A neutral one-line label beats year-only dates.
 
-- Calibrate resume gravitas to the comp range. A $234K-$260K role expects different scope language than a $90K-$120K role.
-- Don't apply to jobs whose comp is far below the candidate's target without acknowledging the gap.
+## Comp bands in JDs
 
-## AI-deployment / AI-platform roles are a category
+Documented for pay-transparency jurisdictions. Calibrate scope language to the posted band; do not apply to bands far below the candidate's target without acknowledging the gap in the fit note.
 
-In 2025-2026, "AI Deployment Engineer", "AI Success Engineer", "AI Solutions Engineer", "Forward Deployed Engineer", "AI Solutions Architect" have emerged as distinct senior roles at AI labs and AI-enabled enterprises. They share traits:
+## What has not changed
 
-- 5-8 years technical customer-facing
-- Production AI deployment experience
-- Workshop / training / enablement delivery
-- Multi-stakeholder program management
-- Specific platform fluency (OpenAI API, Anthropic API, AWS Bedrock, Azure OpenAI, etc.)
-
-For these roles, the screener-pass should specifically check: production agentic system credibility, customer-facing workshop evidence, named industries served, security and compliance fluency.
-
-## Generic backend / frontend roles are still common
-
-Despite AI hype, the most common engineering openings are still generic backend, frontend, and full-stack roles. The implication:
-
-- Don't AI-wash a frontend role. If the JD is React + TypeScript + REST APIs, the resume should foreground that work.
-- AI experience is a useful supporting signal; don't make it the whole resume.
-
-## "Senior" inflation
-
-"Senior" has inflated in titles. In 2025-2026, a "Senior Software Engineer" at most companies is 5-7 years of experience. "Staff" is 8-12. "Principal" is 12+.
-
-For roles labeled "Senior" with 8+ year requirements, the role is staff-coded; the resume should reflect staff-level scope.
-
-## Cover letters
-
-Some companies have dropped cover letters; some have reinstated them. The skill produces resumes, not cover letters by default. But:
-
-- If the candidate is a stretch on a role, recommend a cover letter to bridge the gap.
-- If the candidate is mission-aligned with a mission-driven company, recommend a cover letter to demonstrate it.
-- For frontier AI labs and defense companies, cover letters are still often valuable.
-
-## Resume length
-
-The "one-page resume" myth is gone for experienced candidates. The new norms:
-
-- 0-3 years experience: 1 page.
-- 3-10 years experience: 1-2 pages.
-- 10+ years or senior roles: 2 pages.
-- Principal / Distinguished: 2-3 pages.
-- Academic / CV-style: as long as the work warrants.
-
-Two pages is the safe default for most experienced candidates.
-
-## Font and layout choices
-
-Calibri or other modern sans-serif (Helvetica, Inter, Source Sans) is standard. Avoid Times New Roman unless the field is academic / legal. Avoid Arial, it reads as old-corporate. The skill's default is Calibri.
-
-Modest accent color (a single accent for headers, no rainbow) is acceptable. The skill's default is a muted blue.
-
-## Specific things 2025-2026 hiring managers notice
-
-- AI usage in writing the resume itself. Resumes with strong AI-generated cadence ("I am thrilled to apply...", "I am passionate about...", long lists of empty intensifiers) get flagged as low-effort. Write like a human; if using AI assistance, edit for voice.
-- LinkedIn / GitHub mismatch with resume. If the candidate's LinkedIn shows different titles or dates, the resume gets flagged. Verify alignment.
-- Vague "led" / "drove" / "owned" verbs without scope. Replace with specific verbs and named scope.
-- Bullets that all start with the same verb. Vary the verbs.
-
-## Trends specific to AI / ML hiring
-
-- Power-user-of-AI-tools claims now require evidence. "Daily user of Claude Code, Cursor, Windsurf" plus deeply customized workflow detail beats generic AI-tool mentions.
-- Open-source LLM stack credibility ("Ollama, OpenWebUI, MLX, GGUF quantization") differentiates from candidates who only use frontier APIs.
-- Multi-model evaluation experience is increasingly important for AI-deployment roles.
-- RLHF / RL claims are heavily scrutinized. Don't claim unless real.
-- Production-AI-with-paying-users is the strongest credibility signal an AI resume can carry.
-
-Update this file as trends shift.
+Reverse-chronological or hybrid layouts; functional layouts read as concealment and parse badly. Standard section names. Sans-serif or classic serif fonts at 10 to 12pt. One column. Month YYYY dates. No photos in US, UK, Canada, or Australia. Cover letters are optional at most companies and still useful for stretch fits and mission-driven employers.
