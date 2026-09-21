@@ -43,7 +43,29 @@ Compute the tier from the matrix. Do not eyeball it.
 
 Rows with status `ask` are treated as gaps for the tier until answered; recompute after the candidate replies.
 
-Report to the candidate before drafting: the tier, every hard row not met, the adjacent rows and the bridge you will use, and the questions list. On weak or very weak, recommend the alternative (a different role at the same company, a cover letter that addresses the gap directly, or not applying) and continue only if they choose to.
+Report to the candidate before drafting. The matrix is the working artifact; the candidate sees a condensed view:
+
+```markdown
+## Fit: [Role] at [Company]
+
+**Tier:** [tier], because [one sentence from the matrix].
+
+### Hard requirements
+| Requirement | Your evidence | Status |
+|---|---|---|
+| ... | ... | met / partial / adjacent (bridge: ...) / gap / ask |
+
+### Preferred
+met: ...   partial or adjacent: ...   gap: ...
+
+### Before I draft
+- Questions (up to five): ...
+- Gaps I will name in the cover note rather than paper over: ...
+
+Proceed as is, adjust inputs, or pick a different role?
+```
+
+On weak or very weak, recommend the alternative (a different role at the same company, a cover letter that addresses the gap directly, or not applying) and continue only if they choose to. Never upgrade a `gap` or `ask` without new evidence from the candidate.
 
 ## How the matrix drives the draft
 

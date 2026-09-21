@@ -40,7 +40,7 @@ npx skills add flowmar47/resume-screener-loop
 
 Or copy the directory into one agent's skills folder by hand. The `SKILL.md` frontmatter follows the open Agent Skills specification, so any compliant agent picks it up.
 
-Runtime needs: Node 18+ (the checker has no dependencies; the DOCX builder needs `npm install docx` in your working directory), a web fetch or search tool or `curl`, and optionally LibreOffice for exact page counts.
+Runtime needs: Node 18+ (the checker has no dependencies; the DOCX builder needs `npm install docx` in your working directory, or `npm install` in this repository), a web fetch or search tool or `curl`, and optionally LibreOffice for exact page counts.
 
 ## Use
 
@@ -61,22 +61,30 @@ node scripts/resume-check.js Resume.docx --jd jd.txt --must "Python,Kubernetes" 
 node scripts/resume-check.js Resume.docx --profile federal        # OPM two-page rule, MM/YYYY dates, hours per week
 node scripts/resume-check.js resume.md --target-pages 1           # new grad
 node scripts/docx-text.js Resume.docx                             # what a parser sees
+node scripts/build-resume.js --jd jd.txt --preview                # run every build_*.js here, then check each output
 ```
 
-Exit code 0 means no blockers. The keyword section is a diagnostic list for judgment, not a score; no employer system publishes one.
+Exit code 0 means no blockers. The keyword section is a diagnostic list for judgment, not a score; no employer system publishes one. Page counts are exact when LibreOffice is installed and an estimate otherwise (add `--no-render` to skip the render).
 
 ## Repository layout
 
 ```
 SKILL.md                      entry point any agent reads
 install.sh                    link the skill into every agent found on the machine
+package.json                  `npm install` for the docx builder; npm scripts for check, text, build
 scripts/
   resume-check.js             mechanical gate (structure, style, dates, pages, keywords)
   docx-text.js                zero-dependency DOCX text and structure extractor
+  render-pdf.js               DOCX to PDF via LibreOffice, isolated profile, hard timeout
+  build-resume.js             runs build_*.js, then the checker on each output, optional PNG preview
 reference/
   workflow.md                 the loop in detail
   evidence-ledger.md          provenance format and rules
   requirements-matrix.md      JD decomposition, fit-tier rules, keyword decisions
+  experience-discovery.md     asking the candidate: branching probes, five-question cap
+  strategic-questions.md      positioning and preference questions before drafting
+  bullet-patterns.md          bullet shapes and verbs by track
+  batch-workflow.md           several jobs in one session
   screener-critique.md        three readers, rubric, blinding, convergence
   screener-personas.md        company and segment archetypes for the hiring-manager read
   anti-patterns.md            banned phrasing and substitutions

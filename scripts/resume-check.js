@@ -21,6 +21,7 @@
  *   --text <out.txt>      also write the ATS-extracted plain text
  *   --json                machine-readable report on stdout
  *   --strict              MAJOR findings also fail the run
+ *   --no-render           skip the LibreOffice page count (estimate only)
  *
  * exit codes: 0 pass, 1 blockers (or majors with --strict), 2 usage error
  *
@@ -30,9 +31,8 @@
 
 const fs = require("fs");
 const path = require("path");
-const os = require("os");
-const { execFileSync } = require("child_process");
 const { readAny } = require("./docx-text");
+const { renderPdf, pdfPageCount } = require("./render-pdf");
 
 // ------------------------------------------------------------------
 // Word lists
@@ -49,6 +49,7 @@ const BANNED_PHRASES = [
   "go-getter", "self-starter", "team player", "detail-oriented", "detail oriented", "hard-working", "hardworking",
   "synerg", "dynamic professional", "seasoned professional", "proven track record", "track record of success",
   "out-of-the-box", "think outside the box", "hit the ground running", "wear many hats", "go above and beyond",
+  "delved", "delve into", "tapestry", "beacon of", "testament to", "rich landscape", "pivotal role", "state-of-the-art",
   "responsible for", "duties included", "references available",
 ];
 
@@ -56,7 +57,7 @@ const BANNED_PHRASES = [
 const WEAK_OPENERS = [
   "spearheaded", "leveraged", "orchestrated", "utilized", "championed", "pioneered", "revolutionized",
   "helped", "assisted with", "assisted in", "worked on", "worked with", "participated in", "involved in",
-  "was responsible", "tasked with", "supported the", "contributed to",
+  "was responsible", "tasked with", "supported the", "contributed to", "fostered", "streamlined", "drove",
 ];
 
 // Verbs allowed to repeat a little more than others (fine in moderation).
@@ -419,7 +420,7 @@ function checkFederal(text) {
 
 function estimatePages(paragraphs, structure) {
   const bodyPt = (() => {
-    const sizes = paragraphs.flatMap((p) => p.sizes);
+    const sizes = paragraphs.flatMap((p) => p.sizes).filter((s) => s >= 8 && s <= 13); // body-text range only
     if (!sizes.length) return 11;
     const counts = new Map(); for (const s of sizes) counts.set(s, (counts.get(s) || 0) + 1);
     return [...counts].sort((a, b) => b[1] - a[1])[0][0];
@@ -429,34 +430,32 @@ function estimatePages(paragraphs, structure) {
   const m = structure && structure.marginsIn ? structure.marginsIn : { top: 1, right: 1, bottom: 1, left: 1 };
   const textW = pw - m.left - m.right;
   const textH = ph - m.top - m.bottom;
-  const charsPerLine = Math.floor(textW * (165 / bodyPt)); // ~16.5 cpi at 10pt for Calibri-class fonts
-  const lineHeightIn = (bodyPt * 1.42) / 72; // line spacing plus average paragraph spacing
+  // Calibrated against LibreOffice renders of the bundled template: ~16 chars per inch at 10pt
+  // (Calibri-class fonts), and ~1.7x the font size per rendered line once paragraph spacing,
+  // section-header spacing, and bullet gaps are averaged in. Other templates will differ; that is
+  // why this is labeled an estimate and why LibreOffice is used whenever it is available.
+  const charsPerLine = Math.floor(textW * (160 / bodyPt));
+  const lineHeightIn = (bodyPt * 1.7) / 72;
   const linesPerPage = Math.floor(textH / lineHeightIn);
   let lines = 0;
   for (const p of paragraphs) {
     const t = p.text.trim();
     if (!t) { lines += 0.5; continue; }
-    const width = p.isBullet ? charsPerLine - 5 : charsPerLine;
-    lines += Math.max(1, Math.ceil(t.length / width)) + (p.hasBorder ? 0.8 : 0);
+    const width = p.isBullet ? charsPerLine - 4 : charsPerLine;
+    lines += Math.max(1, Math.ceil(t.length / width));
   }
-  return { value: Math.max(1, Math.ceil(lines / linesPerPage)), method: "estimate", lines: Math.round(lines), linesPerPage };
+  const value = Math.max(1, Math.ceil(lines / linesPerPage));
+  const fill = (lines % linesPerPage) / linesPerPage;
+  const nearLimit = value === Math.ceil(lines / linesPerPage) && (fill > 0.9 || fill < 0.1) && lines > linesPerPage * 0.5;
+  return { value, method: "estimate", lines: Math.round(lines), linesPerPage, nearLimit };
 }
 
-function measurePages(file) {
-  const candidates = [which("soffice"), which("libreoffice"), "/Applications/LibreOffice.app/Contents/MacOS/soffice"].filter((p) => p && fs.existsSync(p));
-  if (!candidates.length || !/\.docx$/i.test(file)) return null;
-  const outDir = fs.mkdtempSync(path.join(os.tmpdir(), "resume-check-"));
-  try {
-    execFileSync(candidates[0], ["--headless", "--convert-to", "pdf", "--outdir", outDir, file], { stdio: "ignore", timeout: 90000 });
-    const pdf = path.join(outDir, path.basename(file).replace(/\.docx$/i, ".pdf"));
-    const bytes = fs.readFileSync(pdf, "latin1");
-    const pages = (bytes.match(/\/Type\s*\/Page[^s]/g) || []).length;
-    return pages ? { value: pages, method: "libreoffice", pdf } : null;
-  } catch (e) {
-    return null;
-  } finally {
-    // keep the PDF for visual spot checks; caller may report the path
-  }
+function measurePages(file, opts) {
+  if (opts.noRender || !/\.docx$/i.test(file)) return null;
+  const r = renderPdf(file, null, 15000);
+  if (r.error) return { error: r.error };
+  const pages = pdfPageCount(r.pdf);
+  return pages ? { value: pages, method: "libreoffice", pdf: r.pdf } : { error: "could not count pages in the rendered pdf" };
 }
 
 // ------------------------------------------------------------------
@@ -579,7 +578,7 @@ function checkKeywords(resumeText, jdText, must) {
 // ------------------------------------------------------------------
 
 function parseArgs(argv) {
-  const opts = { file: null, jd: null, must: [], targetPages: 2, profile: "standard", paper: "letter", text: null, json: false, strict: false };
+  const opts = { file: null, jd: null, must: [], targetPages: 2, profile: "standard", paper: "letter", text: null, json: false, strict: false, noRender: false };
   for (let i = 0; i < argv.length; i++) {
     const a = argv[i];
     const next = () => argv[++i];
@@ -591,10 +590,11 @@ function parseArgs(argv) {
     else if (a === "--text") opts.text = next();
     else if (a === "--json") opts.json = true;
     else if (a === "--strict") opts.strict = true;
+    else if (a === "--no-render") opts.noRender = true;
     else if (a.startsWith("--")) { console.error(`unknown option ${a}`); process.exit(2); }
     else opts.file = a;
   }
-  if (!opts.file) { console.error("usage: node resume-check.js <resume.docx|.txt|.md> [--jd jd.txt] [--must a,b] [--target-pages n] [--profile standard|federal] [--paper letter|a4|any] [--text out.txt] [--json] [--strict]"); process.exit(2); }
+  if (!opts.file) { console.error("usage: node resume-check.js <resume.docx|.txt|.md> [--jd jd.txt] [--must a,b] [--target-pages n] [--profile standard|federal] [--paper letter|a4|any] [--text out.txt] [--json] [--strict] [--no-render]"); process.exit(2); }
   if (opts.profile === "federal") opts.targetPages = Math.min(opts.targetPages, 2);
   return opts;
 }
@@ -613,9 +613,14 @@ function run(opts) {
   ];
   if (opts.profile === "federal") findings.push(...checkFederal(text));
 
-  const pages = measurePages(opts.file) || estimatePages(paragraphs, structure);
-  if (pages.value > opts.targetPages) findings.push(finding(pages.method === "estimate" ? SEV.MAJOR : SEV.BLOCKER, "page-budget", `${pages.value} page(s) (${pages.method}) against a budget of ${opts.targetPages}. Tighten: compress older roles, cut the weakest bullets, merge skill lines.`));
-  else findings.push(finding(SEV.INFO, "page-budget", `${pages.value} page(s) (${pages.method}${pages.method === "estimate" ? "; install LibreOffice for an exact count" : ""}), budget ${opts.targetPages}.`));
+  const measured = measurePages(opts.file, opts);
+  const pages = measured && measured.value ? measured : estimatePages(paragraphs, structure);
+  if (measured && measured.error) pages.note = `LibreOffice ${measured.error}; estimate used`;
+  else if (pages.method === "estimate") pages.note = opts.noRender ? "render skipped" : "install LibreOffice for an exact count";
+  if (pages.method === "estimate" && pages.nearLimit) pages.note += "; close to a page boundary, verify the real count before submitting";
+  const pageNote = pages.note ? `; ${pages.note}` : "";
+  if (pages.value > opts.targetPages) findings.push(finding(pages.method === "estimate" ? SEV.MAJOR : SEV.BLOCKER, "page-budget", `${pages.value} page(s) (${pages.method}${pageNote}) against a budget of ${opts.targetPages}. Tighten: compress older roles, cut the weakest bullets, merge skill lines.`));
+  else findings.push(finding(SEV.INFO, "page-budget", `${pages.value} page(s) (${pages.method}${pageNote}), budget ${opts.targetPages}.`));
 
   const words = wordCount(text);
   findings.push(finding(SEV.INFO, "word-count", `${words} words.`));
@@ -655,7 +660,7 @@ if (require.main === module) {
   try { report = run(opts); } catch (e) { console.error(`resume-check: ${e.message}`); process.exit(2); }
   if (opts.json) process.stdout.write(JSON.stringify(report, null, 2) + "\n");
   else printReport(report);
-  process.exit(report.failed ? 1 : 0);
+  process.exitCode = report.failed ? 1 : 0; // not process.exit(): piped stdout is async on macOS and would truncate
 }
 
 module.exports = { run };

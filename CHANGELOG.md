@@ -15,6 +15,8 @@ The loop was rebuilt around two problems the first version did not solve: a mode
 - `reference/agent-tooling.md` and `install.sh`: the skill is agent-agnostic; the installer links it into every agent skills directory found on the machine.
 - Personas for healthcare, finance and consulting, US federal, academic, and executive search; segment gates for sales, clinical, federal, executive, new grad, career changer, and international norms.
 
+- From the parallel enhancement merged as PR #1: operating modes (full, batch, critique-only, screen-only), branching discovery probes with a five-question cap (`reference/experience-discovery.md`), positioning questions (`reference/strategic-questions.md`), the batch workflow (`reference/batch-workflow.md`), bullet shapes by track (`reference/bullet-patterns.md`), three more personas (quantitative finance, health-tech product, platform and SRE), the generated-prose cliché list, the page-budget cut order, and the `build-resume.js` orchestrator, rewritten to run the checker instead of carrying its own rule list.
+
 **Changed**
 
 - All instructions are written for any agent (no product-specific tool names in the workflow).
@@ -25,6 +27,7 @@ The loop was rebuilt around two problems the first version did not solve: a mode
 **Removed**
 
 - Global `npm install docx --global` and `NODE_PATH` instructions; install locally in the working directory.
+- `reference/gap-scorecard.md` (superseded by the requirements matrix), `reference/ats-optimization.md` (superseded by `ats-mechanics.md` and the matrix's keyword decisions), and `scripts/check-keywords.js` (superseded by `resume-check.js --jd` and `--must`, which read the built output instead of the source).
 
 ## 1.0.0
 

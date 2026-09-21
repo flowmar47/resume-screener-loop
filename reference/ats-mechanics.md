@@ -72,6 +72,37 @@ DOCX versus PDF: both parse fine in modern systems when the PDF is text-based. D
 - **Formatting OPM recommends**: sans-serif body at 10pt, 14pt titles, 0.5-inch margins; upload as PDF under 5 MB, no password, no PDF portfolio, plain filename.
 - **Questionnaires no longer rank candidates.** Since 2025-09-30, self-assessment questionnaires may determine eligibility but not rank; structured resume reviews and validated assessments do. The resume text carries more weight than before. (documented: OPM guidance on self-reported assessments, February 2026)
 
+## 7. Detecting the ATS from the posting
+
+Useful for the cover note's upload advice; it does not change how the resume is written.
+
+| Signal in the URL or posting | Likely system | Upload note |
+|---|---|---|
+| `*.myworkdayjobs.com`, req IDs like `R12345`, `JR-`, `WD` | Workday | DOCX or text PDF both parse; expect skill-extraction prompts on apply |
+| `boards.greenhouse.io`, `job-boards.greenhouse.io` | Greenhouse | either format; knockout questions on the form |
+| `jobs.lever.co` | Lever | either format; custom-question automations |
+| `jobs.ashbyhq.com` | Ashby | either format; per-criterion AI review |
+| `*.taleo.net`, `*.oraclecloud.com` | Oracle Taleo or Recruiting Cloud | prefer DOCX; disqualification questionnaire |
+| `*.icims.com` | iCIMS | either format |
+| `*.successfactors.com`, `jobs.sap.com` | SAP SuccessFactors | either format (Textkernel parser) |
+| `*.smartrecruiters.com` | SmartRecruiters | either format; knockout questions auto-reject |
+| `usajobs.gov` | USA Staffing | PDF under 5 MB, two pages, plain filename |
+
+## 8. Keyword report for the cover note
+
+Report coverage as a list, not a percentage, and keep it off the resume:
+
+```markdown
+### Requirement coverage
+| JD requirement | Where on the resume | Status |
+|---|---|---|
+| Kubernetes | Skills; lead role bullet 2 | met |
+| Workshops for engineering teams | Consulting bullet 2 | met (added after your answer) |
+| TypeScript | not claimed | gap |
+
+Upload: [DOCX or PDF per the table above]. Application form answers to keep consistent with the resume: years [n], location [x], authorization [y], clearance [z].
+```
+
 ## Sources
 
 - Greenhouse Talent Matching FAQ: https://support.greenhouse.io/hc/en-us/articles/41131886674075-Talent-Matching-FAQ

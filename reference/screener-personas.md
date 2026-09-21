@@ -112,6 +112,33 @@ Retained search firms and boards hiring VP and C-level.
 **Lands**: scope on the first line of each role; two or three measured outcomes per role from the ledger; board work in its own section.
 **Verdict**: "Present to client" / "Hold, scope unclear" / "Pass, level mismatch".
 
+## Quantitative finance and low-latency trading
+
+Companies: Jane Street, Citadel, Hudson River Trading, Jump Trading, Optiver, DRW.
+
+**Bar**: low-latency systems work (C++, FPGA, kernel bypass); fundamentals (lock-free structures, cache behavior, network protocols); Linux internals; a strong mathematics, statistics, or physics record.
+**Trips**: high-level frameworks claiming performance with no mechanics; cloud orchestration vocabulary where bare metal is the job; AI marketing language on a systems role; "fast" without a measured latency.
+**Lands**: measured latency figures from the ledger with percentile and conditions; SIMD, lock-free queue, and zero-copy networking detail; behavior under volatility events.
+**Verdict**: "Forward, systems depth is real" / "Forward, math record matches, screen C++" / "Pass, too high-level".
+
+## Health-tech and regulated clinical systems product management
+
+Companies: Flatiron Health, Veeva, Epic, Tempus, clinical-trial platforms, payer startups.
+
+**Bar**: direct work under HIPAA, FDA 21 CFR Part 11, SOC 2; standards-based integrations (HL7, FHIR, Epic and Cerner APIs); empathy for clinical workflows; audit-logging and governance rigor.
+**Trips**: commercial PM resume with no regulatory or clinical bridge; security claims with no named standard; no clinical data vocabulary.
+**Lands**: FHIR integrations described concretely; a regulated release taken through clearance or audit; work done alongside clinicians or investigators.
+**Verdict**: "Forward, compliance and integration depth" / "Borderline, healthcare exposure shallow" / "Pass, no regulated-industry experience".
+
+## Platform, DevOps, and SRE
+
+Companies: HashiCorp, cloud providers, GitLab, Netflix, large enterprise infrastructure teams.
+
+**Bar**: infrastructure as code at scale; high-availability patterns (multi-region, zero-downtime migrations); SLOs, error budgets, and observability (Prometheus, Grafana, OpenTelemetry); incident discipline (runbooks, blameless post-mortems).
+**Trips**: console-driven operations presented as platform work; "maintained uptime" with no SLO or post-mortem culture; tool names with no architectural ownership.
+**Lands**: fleet scale from the ledger (nodes, regions, request volume); deployment patterns that removed downtime; SLO alerting tied to runbooks with measured response-time change when measured.
+**Verdict**: "Forward, platform builder" / "Borderline, verify IaC discipline in the technical round" / "Pass, operator rather than builder".
+
 ## Generalist recruiter (fallback)
 
 When the JD fits no archetype, screen for: can this person do the job on day one; specific tools and outcomes; scope language matched to level; no banned patterns. Use only when nothing else fits.

@@ -11,6 +11,10 @@ Use this when `SKILL.md` is not enough. Each phase lists its inputs, its output 
 - Candidate preferences: omissions (no GitHub, no dollar figures), tone, location and remote stance, page budget, anything they want kept.
 - Segment: standard, US federal, academic, executive, new grad, or another national norm.
 
+**Mode**: full loop (default), batch (two or more roles; read `batch-workflow.md`), critique-only (the candidate has a draft: ledger and matrix light, then Phases 4 to 7 on their draft), or screen-only (Phases 4 and 5, report the verdicts, no revision).
+
+**Confirm back in four to six lines** before reading deeply: role title, company, level signal, number of hard requirements spotted, segment, and mode. It is cheap insurance against a mis-parsed posting.
+
 **Checkpoint**: you can name the candidate's primary discipline, their strongest production work, their level, and the target role's company and title. If not, ask before reading further.
 
 ## Phase 1: Evidence ledger
@@ -76,27 +80,27 @@ Before building, run the gate for the segment:
 
 ### Build
 
-Generate the DOCX with the templates (`templates/README.md`). The default output is US Letter, Calibri 10pt body, 0.75-inch margins, single column, standard headings, real bullet numbering, no headers or footers. Also write the plain-text version for paste-in forms.
+Generate the DOCX with the templates (`templates/README.md`); `scripts/build-resume.js` runs every `build_*.js` in the working directory and then the checker on each output. The default output is US Letter, Calibri 10pt body, 0.75-inch margins, single column, standard headings, real bullet numbering, no headers or footers. Also write the plain-text version for paste-in forms.
 
-**Output**: `out/Resume_First_Last_Role.docx`, `out/Resume_First_Last_Role.txt`, the annotated working copy.
+**Output**: `out/Resume_First_Last_Company_Role.docx`, the matching `.txt`, and the annotated working copy. Keep filenames to letters, digits, and underscores; some upload forms reject spaces and punctuation.
 
 ## Phase 4: Mechanical gate
 
 ```bash
-node scripts/resume-check.js out/Resume_First_Last_Role.docx \
+node scripts/resume-check.js out/Resume_First_Last_Company_Role.docx \
   --jd work/jd.txt \
   --must "Go,Kubernetes,PostgreSQL,Bachelor" \
-  --text out/Resume_First_Last_Role.txt
+  --text out/Resume_First_Last_Company_Role.txt
 ```
 
-Options: `--target-pages 1` (new grads), `--profile federal` (USAJOBS: two-page cap, MM/YYYY dates, hours per week), `--paper a4` (non-US markets), `--strict` (majors fail too), `--json` (machine-readable).
+Options: `--target-pages 1` (new grads), `--profile federal` (USAJOBS: two-page cap, MM/YYYY dates, hours per week), `--paper a4` (non-US markets), `--strict` (majors fail too), `--json` (machine-readable), `--no-render` (skip the LibreOffice page count; the estimate is then used and labeled).
 
 Read the report top to bottom:
 
 - **BLOCKER** and **MAJOR**: fix, rebuild, rerun.
 - **VERIFY quantified-claims**: every listed claim must map to a ledger row with a basis. No basis, rewrite qualitatively.
 - **VERIFY jd-terms-missing**: classify each term (gap, wording mismatch, irrelevant) per `requirements-matrix.md`. Update the matrix if a term reveals a requirement you missed.
-- **INFO page-budget**: an estimate unless LibreOffice is installed; treat an estimate at the limit as over.
+- **INFO page-budget**: an estimate unless LibreOffice is installed; treat an estimate at the limit as over. When over budget, cut in this order and ask before dropping anything the candidate asked to keep: a languages or interests section; the oldest role to one line or two bullets; education extras for candidates with five or more years; skill categories the matrix does not use; the weakest bullets in older roles; the summary's length.
 - **Top-third preview**: this is what Reader A will see; if the current title, company, and dates are not in it, restructure before screening.
 
 **Checkpoint**: exit code 0 with no blocker or major findings.

@@ -1,105 +1,59 @@
-# Batch Workflow (Multiple Roles)
+# Batch Workflow: Several Jobs in One Session
 
-Use when Phase 0 detects **2+ target roles** in one session. Preserves the screener loop **per role** while sharing expensive upstream work.
+Share the expensive upstream work (ledger, discovery) across jobs; never share the screen. Each job gets its own matrix, draft, gate, three-reader screen, and convergence.
 
-## Detection triggers
+## Detecting batch mode
 
-- Multiple JD URLs or pasted JDs
-- Phrases: "batch tailor", "multiple jobs", "these 3 roles", "apply to all of these"
-- List of company/role pairs
+Several JD URLs or pastes; phrases like "these three roles", "batch", "apply to all of these"; a list of company and title pairs. Confirm:
 
-Confirm with user:
+> I see {n} target roles. I will read your material once, build one ledger, ask any questions once, and then tailor and screen each role separately. Proceed?
 
-```
-"I see {N} target roles. Batch mode shares profile ingestion, gap analysis, and discovery,
-then tailors + screens each role separately. Proceed? (Y/N)"
-```
+## Shared phases
 
-## Architecture
+1. **Ledger** once (`evidence-ledger.md`).
+2. **One matrix per JD** (`requirements-matrix.md`). Give each job a slug (`acme-senior-backend`, `openai-deployment-eng`).
+3. **Cross-job gap map**: union of hard and soft rows across the matrices, each tagged with the jobs it appears in.
 
-```
-SHARED: Phase 0 → Phase 1 (all JDs) → aggregate gap map → Phase 1.5 (once)
-PER ROLE: Phase 2 → Phase 3 → Phase 4
-FINAL: cross-role pattern summary + zip of DOCXs
-```
+| Requirement | Jobs | Ledger evidence | Status |
+|---|---|---|---|
+| Workshops for engineering teams | 2 of 3 | none | ask |
+| Public technical writing | 3 of 3 | site only | partial |
+| Production Kubernetes | 1 of 3 | none | gap (job-specific) |
 
-## Phase 0–1 (shared)
+4. **One discovery batch**, five questions, ordered by leverage: rows in three or more jobs first, then two, then one (`experience-discovery.md`). Tag each answer with the jobs it serves.
+5. **Fit tier per job**, never averaged. Report all tiers together so the candidate can drop weak ones before drafting.
 
-1. Ingest profile once; build one working profile.
-2. For each JD: extract must-haves, preferred, level, ATS hint. Assign `role-slug` (e.g. `openai-codex-de`, `anthropic-de`).
-3. **Aggregate gap map:** union all must-haves across JDs. Tag each gap with job IDs where it appears.
+## Per-job phases
 
-Example:
+For each slug: draft from the shared content module with role-specific bullet variants (`templates/content-template.js`), build, run the checker against that job's JD and hard rows, screen with the persona that matches that company, revise, converge. Do not skip a job's screen to save time; it is the point of the loop.
 
-| Requirement | Jobs | Profile | Status |
-|-------------|------|---------|--------|
-| Workshop delivery | 2/3 | Internal only | 🟡 |
-| Public technical writing | 3/3 | Site only | 🟡 |
-| Kubernetes production | 1/3 | None | ❌ (job-specific) |
-
-4. Prioritize discovery:
-   - **HIGH leverage:** gap in 3+ jobs
-   - **MEDIUM:** 2 jobs
-   - **LOW:** 1 job (handle in that role's draft only)
-
-5. Single fit assessment **per role**; do not average into one score.
-
-## Phase 1.5 (shared discovery)
-
-- One discovery session, max **5 questions**, prioritized by leverage.
-- Tag answers: "applies to jobs: A, B".
-- Update working profile once.
-
-## Per-role Phases 2–4
-
-For each `role-slug`:
-
-1. **Phase 2:** Role-specific draft from shared `content.js` with role variant bullets; ATS pass against **that** JD only; build `Resume_<Name>_<Company>_<slug>.docx`.
-2. **Phase 3:** Individual screener critique with correct persona per company.
-3. **Phase 4:** Revise; verify; add to deliverables list.
-
-Reuse `content.js` + separate `build_<slug>.js` per role (see `templates/content-template.js`).
-
-## Cross-role synthesis (after all screens)
-
-After individual critiques, write a short **pattern summary**:
-
-```markdown
-## Cross-role findings
-
-Patterns across {N} resumes:
-1. [Systemic issue, e.g. workshop evidence missing everywhere]
-2. [Framing that worked in 2/3 screens]
-3. [One role-specific stretch to avoid applying to]
-
-Recommended profile updates for next batch:
-- [Add to content.js / master profile]
-```
-
-This catches improvements no single-role screen would surface.
-
-## Working directory layout
+## Working directory
 
 ```
-batch_<YYYY-MM-DD>/
-├── content.js                 # shared candidate facts
-├── build_<role-slug-1>.js
-├── build_<role-slug-2>.js
-├── jd_<role-slug-1>.txt       # optional saved JDs
-├── Resume_*_<slug-1>.docx
-├── Resume_*_<slug-2>.docx
-└── batch_cover_notes.md
+batch_2026-09-21/
+  work/ledger.md
+  work/matrix_<slug>.md
+  work/jd_<slug>.txt
+  content.js
+  build_<slug>.js
+  out/Resume_First_Last_<Company>_<Role>.docx and .txt
+  out/cover_notes.md
 ```
 
-## Time discipline
+```bash
+node /path/to/resume-screener-loop/scripts/build-resume.js            # builds every build_*.js and checks each output
+node /path/to/resume-screener-loop/scripts/resume-check.js out/Resume_..._Acme_Senior_Backend.docx --jd work/jd_acme-senior-backend.txt --must "Go,Kubernetes"
+```
 
-- Do not skip per-role Phase 3 to save time; it is the skill's core value.
-- Shared discovery should not exceed 5 questions unless user opts in.
-- Express mode: user may waive strategic questions but not fit assessment or screener pass.
+## Cross-job synthesis
+
+After every job has been screened, write a short pattern note:
+
+- Findings that recurred across most jobs (a missing artifact, an unverifiable scope claim, a title that reads junior). These are profile problems, and one fix serves every application.
+- Framings that landed in more than one screen; reuse them.
+- Roles the candidate should not apply to, with the matrix row that says why.
+- Ledger rows worth adding to the candidate's master material for next time.
 
 ## Deliverables
 
-- Zip of final DOCXs
-- Per-role cover notes (or one doc with sections)
-- Aggregate gap map + cross-role pattern summary
-- Optional: per-role ATS keyword reports
+A zip of the final DOCX and text files; per-job cover notes (or one note with sections); the cross-job pattern note; the fit tiers in one table.

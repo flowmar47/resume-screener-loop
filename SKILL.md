@@ -20,7 +20,14 @@ Two invariants hold throughout:
 
 ## When to use
 
-Tailoring one resume to one job description; batch tailoring for several roles; a pure screening pass on an existing draft; ATS-safety review of a resume the candidate already has. Not for: cover letters, LinkedIn rewrites, generic resume writing with no target role, or file conversion alone.
+| Mode | When | Phases |
+|---|---|---|
+| Full loop (default) | one resume, one job | 0 to 7 |
+| Batch | two or more jobs in a session | 0 to 2 shared per JD, then 3 to 7 per job, then a cross-job pattern note (`reference/batch-workflow.md`) |
+| Critique-only | the candidate already has a draft | 1 and 2 light, then 4 to 7 on their draft |
+| Screen-only | they want the verdicts, not a rewrite | 1 and 2 light, 4 and 5, report |
+
+Not for: cover letters (offer one when fit is a stretch or the employer is mission-driven), LinkedIn rewrites, generic resume writing with no target role, or file conversion alone.
 
 ## Inputs
 
@@ -75,7 +82,7 @@ Run the checker on every draft before any human-style critique:
 node scripts/resume-check.js out/Resume.docx --jd jd.txt --must "Python,Kubernetes,Secret clearance" --text out/Resume.txt
 ```
 
-Pass `--must` with the hard-filter terms from the matrix, `--target-pages 1` for new grads, `--profile federal` for USAJOBS. Fix every BLOCKER and MAJOR. Work the VERIFY lists: each quantified claim maps to a ledger row; each missing JD term is classified as a genuine gap (goes in the fit note), a wording mismatch (use the JD's term once), or irrelevant. The checker is a diagnostic, not an ATS score; no employer system publishes one.
+Pass `--must` with the hard-filter terms from the matrix, `--target-pages 1` for new grads, `--profile federal` for USAJOBS, `--no-render` to skip the LibreOffice page count when it is slow or unavailable. Fix every BLOCKER and MAJOR. Work the VERIFY lists: each quantified claim maps to a ledger row; each missing JD term is classified as a genuine gap (goes in the fit note), a wording mismatch (use the JD's term once), or irrelevant. The checker is a diagnostic, not an ATS score; no employer system publishes one.
 
 ### Phase 5: Three-reader screen
 
@@ -93,7 +100,7 @@ Apply the findings, rebuild, rerun Phase 4, and re-screen. Keep a round log: wha
 
 ### Phase 7: Deliver
 
-- Final DOCX (plus PDF when LibreOffice is available) and the plain-text version for paste-in application forms.
+- Final DOCX (plus PDF when LibreOffice is available) and the plain-text version for paste-in application forms. Name files `Resume_First_Last_Company_Role.docx`, letters, digits, and underscores only.
 - Cover note: fit tier with the matrix summary (met, partial, gap), what changed per round, residual risks, and the open questions the candidate still owes you.
 - Interview probes: the claims the readers pressed on, each with the ledger-backed answer the candidate should be ready to give.
 - Never submit, send, or post anything on the candidate's behalf.
@@ -112,16 +119,30 @@ Apply the findings, rebuild, rerun Phase 4, and re-screen. Keep a round log: wha
 10. Blind the critique. Never let a verdict turn on name, age signals, school prestige, or employment gaps as such.
 11. Every bullet traces to the ledger; every hard requirement traces to a matrix row.
 
+## When things go sideways
+
+| Situation | Response |
+|---|---|
+| Thin profile | ask up to five targeted questions (`reference/experience-discovery.md`); never invent bullets |
+| JD fetch fails or returns chrome | try the employer's careers page; otherwise ask for a paste |
+| Weak fit | say so with the matrix; offer a different role or a cover letter; proceed only on their call |
+| Over the page budget | cut in the order in `reference/workflow.md`; ask before dropping anything they wanted kept |
+| The candidate's own draft is better on a point | keep theirs; do not reintroduce a problem they fixed |
+| Readers disagree after three rounds | ship, and name the residual findings in the cover note |
+
 ## Files
 
 - `reference/workflow.md`: the phases in full detail, with checkpoints and outputs.
 - `reference/evidence-ledger.md`, `reference/requirements-matrix.md`: formats and rules for the two working artifacts.
 - `reference/screener-critique.md`: the three readers, rubric, severity, blinding, convergence.
 - `reference/screener-personas.md`: company and segment archetypes for Reader B.
+- `reference/experience-discovery.md`, `reference/strategic-questions.md`: what to ask the candidate, and how, before drafting.
+- `reference/bullet-patterns.md`: bullet shapes and verb choices by track.
+- `reference/batch-workflow.md`: several jobs in one session.
 - `reference/anti-patterns.md`: banned phrasing and substitutions.
 - `reference/ats-mechanics.md`: what applicant tracking systems actually do, with sources.
 - `reference/industry-trends.md`: what changed recently (federal two-page rule, AI screening, injection detection).
 - `reference/agent-tooling.md`: tool mapping per agent, fallbacks.
-- `scripts/resume-check.js`, `scripts/docx-text.js`: the mechanical gate and the text extractor.
+- `scripts/resume-check.js`, `scripts/docx-text.js`, `scripts/render-pdf.js`, `scripts/build-resume.js`: the mechanical gate, the text extractor, the LibreOffice renderer, and the build orchestrator that runs them.
 - `templates/`: DOCX builder (docx-js) and content pattern.
 - `examples/walkthrough.md`: one full loop on a fictional candidate.

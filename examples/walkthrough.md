@@ -65,10 +65,10 @@ node scripts/resume-check.js Resume_Avery_Lin_OpenAI_AI_Deployment_Engineer.docx
   --jd jd_openai.txt --must "Python,workshops,Claude Code" --text Resume_Avery_Lin.txt
 ```
 
-Output:
+Output (LibreOffice installed, so the page count is measured):
 
 ```
-resume-check: Resume_Avery_Lin_OpenAI_AI_Deployment_Engineer.docx  [docx]  pages: 1 (estimate)  words: 401
+resume-check: Resume_Avery_Lin_OpenAI_AI_Deployment_Engineer.docx  [docx]  pages: 2 (libreoffice)  words: 401
 
 MINOR    [acronym-both-forms] keyword appears in only one form; parsers do not always map acronym to expansion.
            - LLM: also spell out "large language model" once
@@ -88,7 +88,7 @@ VERIFY   [jd-terms-missing] JD terms not found in the resume, highest weight fir
            - pedagogy (w3)
            - community (w3)
            - typescript (w3)
-INFO     [page-budget] 1 page(s) (estimate; install LibreOffice for an exact count), budget 2.
+INFO     [page-budget] 2 page(s) (libreoffice), budget 2.
 INFO     [word-count] 401 words.
 INFO     [keyword-coverage] diagnostic only, not an ATS score: 10 of 25 candidate JD terms appear in the resume.
 INFO     [must-have-present] all 3 required term(s) present.
@@ -108,7 +108,7 @@ top-third preview (what a 7-second scan sees):
 summary: 0 blocker, 0 major, 1 minor, 1 verify, 4 info → PASS
 ```
 
-Working the VERIFY list against the matrix: "power user" and "customer outcomes" are wording mismatches (the ledger supports both; use the JD's phrasing once). "technical consulting", "post-sales engineering", "solutions architecture" are the R1 bridge; the summary will name "technical consulting" explicitly. "typescript" is the R6 gap; it stays in the fit note. "pedagogy", "community", "clarity", "examples" are culture language, ignored. The LLM acronym note is accepted: spell it out once in the skills line.
+Working the VERIFY list against the matrix: "power user" and "customer outcomes" are wording mismatches (the ledger supports both; use the JD's phrasing once). "technical consulting", "post-sales engineering", "solutions architecture" are the R1 bridge; the summary will name "technical consulting" explicitly. "typescript" is the R6 gap; it stays in the fit note. "pedagogy", "community", "clarity", "examples" are culture language, ignored. The LLM acronym note is accepted: spell it out once in the skills line. The page count passes the budget, but the render shows page two holding only the education line; that goes on the revision list.
 
 ## Phase 5: Three-reader screen (blinded copy)
 
@@ -120,7 +120,7 @@ Working the VERIFY list against the matrix: "power user" and "customer outcomes"
 >
 > What works: the alerts platform is real production AI with a daily SLA and paying users; the fallback and validation detail reads like someone who has been paged. The workshop bullet answers the training requirement with audience and topic.
 >
-> What is wrong: (fit, major) public contribution is a personal site and a repo, not guides or examples other engineers have used; say what the methodology pages teach and whether anyone outside uses the repo. (credibility, minor) "Embedded with two enterprise engineering teams" needs the segment named in the bullet, not only the header. (clarity, minor) the solar note line "Multi-million-dollar program execution" is scale language for a different reader; cut it.
+> What is wrong: (fit, major) public contribution is a personal site and a repo, not guides or examples other engineers have used; say what the methodology pages teach and whether anyone outside uses the repo. (credibility, minor) "Embedded with two enterprise engineering teams" needs the segment named in the bullet, not only the header. (clarity, minor) the italic note under the lead role repeats the first bullet; cut it.
 >
 > What would change my mind: one Cookbook-style guide published before applying.
 >
@@ -132,7 +132,7 @@ Working the VERIFY list against the matrix: "power user" and "customer outcomes"
 
 ## Phase 6: Revision and convergence
 
-Round 1 changes: reorder the summary's experience clause; "since 2017" instead of "eight years"; name fintech and healthcare in the consulting bullet; expand the public-work bullets to say what each page teaches and that the repo's runbooks are referenced by the two client teams (E9, confirmed with Avery); spell out "large language model" once; cut the solar note line. Rebuilt, gate passed with the same profile, Reader A forward, Reader B forward-flagged on a flag only Avery can change (a published guide), Reader C no open challenges. Converged after one round.
+Round 1 changes: reorder the summary's experience clause ("Three years building and operating a production agentic AI platform... on top of technical program delivery for enterprise stakeholders since 2017"); name fintech and healthcare in the consulting bullet; expand the public-work bullets to say what each page teaches and that the repo's runbooks are referenced by the two client teams (E9, confirmed with Avery); spell out "large language model" once; cut the italic note under the lead role. Rebuilt and re-gated: `pages: 1 (libreoffice)`, no blocker or major findings, the top-third preview now opens with the AI-platform years. Reader A forward; Reader B forward-flagged on a flag only Avery can change (a published guide); Reader C no open challenges. Converged after one round.
 
 ## Phase 7: Deliverable
 

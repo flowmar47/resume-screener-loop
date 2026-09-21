@@ -35,7 +35,7 @@ Columns:
 
 ## Questions for the candidate
 
-Facts you want but do not have become questions. Collect them; ask in one batch at the fit-tier checkpoint (end of Phase 2), and again at most once after the screen if a reader exposed a gap only the candidate can fill.
+Facts you want but do not have become questions. Collect them; ask in one batch at the fit-tier checkpoint (end of Phase 2), and again at most once after the screen if a reader exposed a gap only the candidate can fill. Cap the batch at five questions unless the candidate asks for a deeper interview; `experience-discovery.md` has the branching probe patterns for skill gaps, soft-skill gaps, and stale resumes.
 
 Good questions name the gap and the reason:
 
