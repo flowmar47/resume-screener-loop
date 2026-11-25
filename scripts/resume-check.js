@@ -4,7 +4,7 @@
  *
  * Deterministic resume checker. Runs the parts of the screener loop that a
  * script can do better than a model: ATS parse safety, house style rules,
- * structure, dates, page budget, and JD keyword coverage.
+ * structure, dates, page budget, blinding, ledger provenance, and JD keyword coverage.
  *
  * Zero dependencies (Node >= 18). Uses ./docx-text.js for DOCX input.
  * Optional: LibreOffice (soffice) for an exact page count; otherwise estimated.
@@ -13,15 +13,19 @@
  *   node resume-check.js <resume.docx|.txt|.md> [options]
  *
  * options:
- *   --jd <file>           job description text; enables keyword coverage
- *   --must "a,b,c"        terms that must appear (hard requirements); MAJOR if absent
- *   --target-pages <n>    page budget (default 2; use 1 for new grads)
- *   --profile <name>      standard (default) | federal
+ *   --jd <file>              job description text; enables keyword coverage
+ *   --must "a,b,c"           terms that must appear (hard requirements); MAJOR if absent
+ *   --target-pages <n>       page budget (default 2; use 1 for new grads)
+ *   --profile <name>         standard (default) | federal
  *   --paper <letter|a4|any>  expected paper size (default letter)
- *   --text <out.txt>      also write the ATS-extracted plain text
- *   --json                machine-readable report on stdout
- *   --strict              MAJOR findings also fail the run
- *   --no-render           skip the LibreOffice page count (estimate only)
+ *   --text <out.txt>         also write the ATS-extracted plain text
+ *   --blind <out.txt>        write a Phase 5 blinded plain-text copy (Candidate, contact stripped)
+ *   --ledger <path>          check [E#] citations in draft bullets against ledger.md
+ *   --pdf <file.pdf>         use a pre-rendered PDF for exact page count
+ *   --json                   machine-readable report on stdout
+ *   --strict                 MAJOR findings also fail the run
+ *   --no-render              skip the LibreOffice page count (estimate only)
+ *   --help, -h               show this help message
  *
  * exit codes: 0 pass, 1 blockers (or majors with --strict), 2 usage error
  *
@@ -30,6 +34,7 @@
  */
 
 const fs = require("fs");
+const os = require("os");
 const path = require("path");
 const { readAny } = require("./docx-text");
 const { renderPdf, pdfPageCount } = require("./render-pdf");
@@ -44,13 +49,30 @@ const BANNED_PHRASES = [
   "unparalleled", "groundbreaking", "industry-leading", "industry leading", "game-changing", "game changing",
   "next-generation", "revolutionized", "revolutionary", "transformed the", "transformational leader",
   "passionate about", "passion for", "thrilled to", "incredibly excited", "deeply committed", "highly motivated",
-  "thought leader", "visionary", "guru", "ninja", "rockstar", "rock star", "wizard", "evangelist",
+  "thought leader", "visionary", "guru", "rockstar", "rock star",
   "ai expert", "ml enthusiast", "tech enthusiast", "results-driven", "results driven", "results-oriented",
   "go-getter", "self-starter", "team player", "detail-oriented", "detail oriented", "hard-working", "hardworking",
-  "synerg", "dynamic professional", "seasoned professional", "proven track record", "track record of success",
+  "dynamic professional", "seasoned professional", "proven track record", "track record of success",
   "out-of-the-box", "think outside the box", "hit the ground running", "wear many hats", "go above and beyond",
   "delved", "delve into", "tapestry", "beacon of", "testament to", "rich landscape", "pivotal role", "state-of-the-art",
   "responsible for", "duties included", "references available",
+];
+
+// Pattern-based banned checks for stem/ambiguous words (avoid false positives like "CMake and Ninja", "Developer Evangelist", "setup wizard").
+const BANNED_PATTERNS = [
+  { label: "synergy", re: /\bsynerg[a-z]*\b/i },
+  {
+    label: "ninja",
+    re: /\b(?:code|coding|tech|software|data|sales|marketing|devops|growth|product|full[- ]stack|javascript|python|css|html|sql|excel)\s+ninja\b|\bninja\s+(?:coder|developer|engineer|at)\b/i,
+  },
+  {
+    label: "wizard",
+    re: /(?<!\b(?:setup|install|installation|configuration|config|migration|onboarding|import|export|booking|checkout|form|multi[- ]step|step[- ]by[- ]step)\s+)\bwizard\b(?!\s*(?:ui|ux|flow|dialog|modal|screen|step|steps|component|interface|page)\b)/i,
+  },
+  {
+    label: "evangelist",
+    re: /(?<!\b(?:developer|technical|product|partner|community|open[- ]source|cloud|platform|security|solutions|field|chief)\s+)\bevangelist\b/i,
+  },
 ];
 
 // Weak or AI-cadence openers. MAJOR when a bullet starts with one.
@@ -103,10 +125,16 @@ const ACRONYMS = {
 // Pairs worth carrying in both forms on the page (recruiters search either). Slang like k8s/js is matched but never suggested.
 const SPELL_OUT = new Set(["ml", "nlp", "llm", "ci/cd", "sre", "iac", "rag", "tdd", "crm", "erp", "kpi", "okr", "p&l", "pmp", "cpa", "ehr", "emr", "evms", "cam", "dod", "sdlc", "etl", "sow", "rfp"]);
 
-const MONTHS = "(?:jan|feb|mar|apr|may|jun|jul|aug|sep|sept|oct|nov|dec)[a-z]*\\.?";
+const MONTHS = "(?:jan(?:uary)?|feb(?:ruary)?|mar(?:ch)?|apr(?:il)?|may|jun(?:e)?|jul(?:y)?|aug(?:ust)?|sep(?:t(?:ember)?)?|oct(?:ober)?|nov(?:ember)?|dec(?:ember)?)\\.?";
 const YEAR = "(?:19|20)\\d{2}";
 const MONTH_YEAR = `(?:${MONTHS}\\s+${YEAR}|\\d{1,2}/${YEAR})`;
-const dateRangeRe = () => new RegExp(`(${MONTH_YEAR}|${YEAR})\\s*(?:-|–|—|to|through)\\s*(${MONTH_YEAR}|${YEAR}|present|current|now|today|ongoing)`, "gi");
+const dateRangeRe = () => new RegExp(`\\b(${MONTH_YEAR}|${YEAR})\\s*(?:-|–|—|to|through)\\s*(${MONTH_YEAR}|${YEAR}|present|current|now|today|ongoing)\\b`, "gi");
+
+const METRIC_RE = /\d+(\.\d+)?\s?%|\$\s?\d[\d,.]*\s?[kmb]?\b|\b\d+(\.\d+)?x\b|\b\d[\d,]*\+|\b(over|more than|nearly|approximately|about)\s+\d[\d,]*/i;
+
+const REGION_CODES = "AL|AK|AZ|AR|CA|CO|CT|DE|FL|GA|HI|ID|IL|IN|IA|KS|KY|LA|ME|MD|MA|MI|MN|MS|MO|MT|NE|NV|NH|NJ|NM|NY|NC|ND|OH|OK|OR|PA|RI|SC|SD|TN|TX|UT|VT|VA|WA|WV|WI|WY|DC|PR|AB|BC|MB|NB|NL|NS|NT|NU|ON|PE|QC|SK|YT|UK|US|EU|ST";
+const COUNTRY_RE = /\b(united states|usa|u\.s\.a?\.|united kingdom|uk|england|scotland|wales|canada|germany|deutschland|france|india|australia|netherlands|switzerland|ireland|israel|japan|singapore|sweden|norway|denmark|finland|spain|italy|portugal|poland|austria|belgium|brazil|mexico|south korea|taiwan|new zealand|uae|united arab emirates|china|hong kong|czechia|czech republic|romania|estonia|argentina|chile|colombia)\b/i;
+const GLOBAL_CITIES_RE = /\b(london|berlin|paris|amsterdam|zurich|zürich|dublin|toronto|vancouver|montreal|montréal|sydney|melbourne|singapore|tokyo|seoul|bengaluru|bangalore|hyderabad|mumbai|delhi|gurugram|pune|tel aviv|stockholm|copenhagen|munich|münchen|frankfurt|barcelona|madrid|milan|vienna|warsaw|prague|lisbon|brussels|oslo|helsinki|auckland|hong kong|taipei|são paulo|sao paulo|new york|san francisco|los angeles|seattle|chicago|boston|austin|denver|atlanta|washington,?\s*d\.?c\.?|miami|dallas|houston|phoenix|san diego|philadelphia|minneapolis|portland|raleigh)\b/i;
 
 // ------------------------------------------------------------------
 // Helpers
@@ -116,6 +144,10 @@ const SEV = { BLOCKER: "BLOCKER", MAJOR: "MAJOR", MINOR: "MINOR", VERIFY: "VERIF
 
 function finding(severity, rule, message, lines, maxLines = 8) {
   return { severity, rule, message, lines: (lines || []).slice(0, maxLines) };
+}
+
+function escapeRe(x) {
+  return x.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 }
 
 function stem(w) {
@@ -145,18 +177,26 @@ function ngramSet(tokens, maxN) {
   return set;
 }
 
-function which(cmd) {
-  const candidates = process.platform === "win32" ? [cmd + ".exe", cmd] : [cmd];
-  for (const dir of (process.env.PATH || "").split(path.delimiter)) {
-    for (const c of candidates) {
-      const p = path.join(dir, c);
-      if (fs.existsSync(p)) return p;
-    }
+function wordCount(text) { return (text.match(/\S+/g) || []).length; }
+
+function extractPhones(text) {
+  const matches = [];
+  for (const m of text.matchAll(/(\+?\(?\d[\d\s().-]{5,20}\d)/g)) {
+    const cand = m[1].trim();
+    if (/[\r\n]/.test(cand)) continue;
+    // Exclude YYYY - YYYY year ranges and 5+4 US ZIP+4 codes.
+    if (/^(?:19|20)\d{2}\s*[-–—\s]\s*(?:19|20)\d{2}$/.test(cand)) continue;
+    if (/^\d{5}-\d{4}$/.test(cand)) continue;
+    const digits = cand.replace(/\D/g, "");
+    if (digits.length < 7 || digits.length > 15) continue;
+    matches.push(cand);
   }
-  return null;
+  return matches;
 }
 
-function wordCount(text) { return (text.match(/\S+/g) || []).length; }
+function hasPhoneNumber(text) {
+  return extractPhones(text).length > 0;
+}
 
 // ------------------------------------------------------------------
 // Rule groups
@@ -165,14 +205,16 @@ function wordCount(text) { return (text.match(/\S+/g) || []).length; }
 function checkStructure(structure, opts) {
   const f = [];
   if (!structure) return f;
-  const contactRe = /@|\(?\d{3}\)?[\s.-]?\d{3}[\s.-]?\d{4}|linkedin/i;
   for (const hf of structure.headerFooterText) {
-    if (contactRe.test(hf.text)) f.push(finding(SEV.BLOCKER, "contact-in-header-footer", `contact details live in ${hf.part}; many parsers skip headers/footers. Move them into the body.`, [hf.text]));
-    else f.push(finding(SEV.MINOR, "header-footer-text", `text in ${hf.part} may be dropped by parsers`, [hf.text]));
+    if (/@|linkedin/i.test(hf.text) || hasPhoneNumber(hf.text)) {
+      f.push(finding(SEV.BLOCKER, "contact-in-header-footer", `contact details live in ${hf.part}; many parsers skip headers/footers. Move them into the body.`, [hf.text]));
+    } else {
+      f.push(finding(SEV.MINOR, "header-footer-text", `text in ${hf.part} may be dropped by parsers`, [hf.text]));
+    }
   }
   if (structure.columns > 1) f.push(finding(SEV.BLOCKER, "multi-column", `${structure.columns}-column layout; parsers read across columns and scramble order. Use one column.`));
   if (structure.textBoxes > 0) f.push(finding(SEV.BLOCKER, "text-boxes", `${structure.textBoxes} text box(es); text inside is often not extracted at all.`));
-  if (structure.hiddenText > 0) f.push(finding(SEV.BLOCKER, "hidden-text", `${structure.hiddenText} hidden-text run(s) (w:vanish). Reads as keyword stuffing or prompt injection; remove.`));
+  if (structure.hiddenText > 0) f.push(finding(SEV.BLOCKER, "hidden-text", `${structure.hiddenText} hidden-text run(s) (w:vanish/w:webHidden). Reads as keyword stuffing or prompt injection; remove.`));
   if (structure.whiteText > 0) f.push(finding(SEV.BLOCKER, "white-text", `${structure.whiteText} white-on-white run(s). Reads as keyword stuffing; remove.`));
   if (structure.tinyText > 0) f.push(finding(SEV.BLOCKER, "tiny-text", `${structure.tinyText} run(s) under 7pt. Reads as hidden keyword stuffing; remove.`));
   if (structure.tables > 0) f.push(finding(SEV.MAJOR, "tables", `${structure.tables} table(s). Cell order and merged cells still confuse parsers; use paragraphs and tab stops.`));
@@ -199,6 +241,19 @@ function checkStructure(structure, opts) {
   return f;
 }
 
+function stripNonPronounTokens(line) {
+  return line
+    .replace(/https?:\/\/\S+/gi, " ")
+    .replace(/[\w.+-]+@[\w-]+\.[\w.-]+/g, " ")
+    .replace(/\b[\w-]+\.me(?:\/\S*)?\b/gi, " ")
+    .replace(/\bI\/O\b/gi, " ")
+    .replace(/\b(?:i\.e\.|e\.g\.)/gi, " ")
+    .replace(/\b[A-Z]\.I\./g, " ")
+    .replace(/\(\s*i\s*\)/gi, " ")
+    .replace(/\b(?:Engineer|Analyst|Developer|Technician|Specialist|Associate|Officer|Operator|Inspector|Coordinator|Consultant|Manager|Director|Scientist|Architect|Designer|Administrator|Programmer|Researcher|Fellow|Intern|Resident|Clerk|Nurse|Therapist|Planner|Buyer|Auditor|Accountant|Representative|Advisor|Lead|Staff|Type|Phase|Title|Class|Tier|Level|Category|Schedule|Section|Part|Volume|Article|Chapter|Stage|Grade|Step|Track|Wave|Group|Band|Rank|Model|Series|Version|Gen|Generation|Semester|Quarter|Module|Unit|Division|Annex|Appendix|Amendment)\s+I\b/g, " ")
+    .replace(/\b(?!(?:that|what|which|when|where|how|why|who|and|but|or|as|so|if|than|yes|no)\b)[A-Z][a-zA-Z]+\s+I(?=\s*(?:$|[|,–—(-]))/g, " ");
+}
+
 function checkHygiene(paragraphs, text) {
   const f = [];
   const lines = paragraphs.map((p) => p.text);
@@ -209,17 +264,24 @@ function checkHygiene(paragraphs, text) {
   const dd = withText(/\S--\S|\s--\s/);
   if (dd.length) f.push(finding(SEV.MAJOR, "double-hyphen", "double hyphen used as a dash.", dd));
 
-  const lower = text.toLowerCase();
   for (const phrase of BANNED_PHRASES) {
-    if (lower.includes(phrase)) {
-      const hits = lines.filter((l) => l.toLowerCase().includes(phrase));
+    const re = new RegExp(`\\b${escapeRe(phrase)}\\b`, "i");
+    const hits = lines.filter((l) => re.test(l));
+    if (hits.length) {
       const sev = /^(responsible for|duties included|references available)$/.test(phrase) ? SEV.MAJOR : SEV.BLOCKER;
       f.push(finding(sev, "banned-phrase", `"${phrase}" is banned (marketing tone, self-awarded title, or filler).`, hits));
     }
   }
 
-  const pronouns = withText(/\b(I|me|my|mine|myself|we|our|ours)\b/);
-  const realPronouns = pronouns.filter((l) => !/\b(Type|Phase|Title|Class|Tier|Level|Category|Schedule|Section|Part|Volume|Article) I\b/.test(l));
+  for (const { label, re } of BANNED_PATTERNS) {
+    const hits = lines.filter((l) => re.test(l));
+    if (hits.length) {
+      f.push(finding(SEV.BLOCKER, "banned-phrase", `"${label}" is banned (marketing tone, self-awarded title, or filler).`, hits));
+    }
+  }
+
+  const pronounRe = /\b(?:I|me|my|mine|myself|we|our|ours)\b/i;
+  const realPronouns = lines.filter((l) => pronounRe.test(stripNonPronounTokens(l)));
   if (realPronouns.length) f.push(finding(SEV.MAJOR, "first-person", "first-person pronouns; resumes use implied subject.", realPronouns));
 
   const injection = withText(/ignore (all )?(previous|prior|above|earlier) (instructions|prompts)|as an ai\b|language model|rank (this|the) (candidate|applicant)|you are (a|an) (recruiter|assistant|hiring)|system prompt|chatgpt|disregard (the )?(above|previous)/i);
@@ -250,22 +312,38 @@ function checkBullets(paragraphs) {
     return f;
   }
 
+  const weakRes = WEAK_OPENERS.map((w) => new RegExp(`^${escapeRe(w)}\\b`, "i"));
   const firstWords = new Map();
   const weak = [];
   const long = [];
   const thin = [];
   const noVerb = [];
-  for (const b of bullets) {
-    const t = b.text.trim();
+  const consecutive = [];
+
+  let prevOpener = null;
+  for (const p of paragraphs) {
+    const t = p.text.trim();
+    if (!t) continue;
+    if (!p.isBullet) {
+      prevOpener = null;
+      continue;
+    }
     const first = (t.match(/^[A-Za-z][A-Za-z-]*/) || [""])[0].toLowerCase();
-    if (first) firstWords.set(first, (firstWords.get(first) || 0) + 1);
-    if (WEAK_OPENERS.some((w) => t.toLowerCase().startsWith(w))) weak.push(t);
+    if (first) {
+      firstWords.set(first, (firstWords.get(first) || 0) + 1);
+      if (first === prevOpener) consecutive.push(t);
+    }
+    prevOpener = first || null;
+
+    if (weakRes.some((re) => re.test(t))) weak.push(t);
     if (t.length > 240) long.push(t);
     if (t.length < 30) thin.push(t);
     if (/^[a-z]/.test(t) && !/^(https?:\/\/|www\.|[a-z0-9.-]+\.[a-z]{2,}(\/|:|\s))/i.test(t)) noVerb.push(t);
   }
+
   const repeats = [...firstWords].filter(([, n]) => n > REPEAT_LIMIT_DEFAULT).map(([w, n]) => `${w} (${n})`);
   if (repeats.length) f.push(finding(SEV.MAJOR, "repeated-openers", `the same opening verb starts more than ${REPEAT_LIMIT_DEFAULT} bullets: ${repeats.join(", ")}. Vary verbs; uniform openers read as generated.`));
+  if (consecutive.length) f.push(finding(SEV.MAJOR, "consecutive-openers", "two consecutive bullets under the same role start with the same verb; vary openers.", consecutive));
   if (weak.length) f.push(finding(SEV.MAJOR, "weak-opener", "bullet opens with a filler or AI-cadence verb (spearheaded, leveraged, orchestrated, helped, worked on...). Use a plain specific verb.", weak));
   if (long.length) f.push(finding(SEV.MAJOR, "bullet-too-long", "bullet runs past two lines (~240 chars). Split or cut.", long));
   if (thin.length) f.push(finding(SEV.MINOR, "bullet-too-thin", "bullet under 30 characters carries no scope or outcome.", thin));
@@ -275,8 +353,7 @@ function checkBullets(paragraphs) {
   for (const p of paragraphs) { run = p.isBullet ? run + 1 : 0; maxRun = Math.max(maxRun, run); }
   if (maxRun > 7) f.push(finding(SEV.MINOR, "bullet-run", `${maxRun} consecutive bullets under one header; cap around 6 for the lead role and 2-4 for older roles.`));
 
-  const metricRe = /\d+(\.\d+)?\s?%|\$\s?\d[\d,.]*\s?[kmb]?\b|\b\d+(\.\d+)?x\b|\b\d[\d,]*\+|\b(over|more than|nearly|approximately|about)\s+\d[\d,]*/i;
-  const metrics = bullets.map((b) => b.text.trim()).filter((t) => metricRe.test(t));
+  const metrics = bullets.map((b) => b.text.trim()).filter((t) => METRIC_RE.test(t));
   if (metrics.length) f.push(finding(SEV.VERIFY, "quantified-claims", `${metrics.length} quantified claim(s). Each must trace to an evidence-ledger entry and survive "how did you measure that?"`, metrics));
   return f;
 }
@@ -288,9 +365,13 @@ function checkContact(paragraphs, structure) {
   const inHF = structure ? structure.headerFooterText.map((h) => h.text).join(" ") : "";
 
   if (!/[\w.+-]+@[\w-]+\.[\w.-]+/.test(all)) f.push(finding(SEV.BLOCKER, "no-email", "no email address in the body" + (/@/.test(inHF) ? " (only in header/footer)" : "") + "."));
-  if (!/(\+?\d[\d\s().-]{8,}\d)/.test(all)) f.push(finding(SEV.MAJOR, "no-phone", "no phone number found."));
+  if (!hasPhoneNumber(all)) f.push(finding(SEV.MAJOR, "no-phone", "no phone number found."));
   if (!/linkedin\.com|github\.com|https?:\/\/|www\.|\.(com|io|dev|net|org|ai)\b/i.test(head)) f.push(finding(SEV.INFO, "no-link", "no LinkedIn or portfolio URL near the top (fine if the candidate asked for none)."));
-  if (!/\b[A-Z][a-zA-Z.\s]+,\s?[A-Z]{2}\b|\bremote\b|\b(united states|usa|uk|canada|germany|france|india|australia)\b/i.test(head)) f.push(finding(SEV.MINOR, "no-location", "no city/state, country, or remote statement near the top; recruiters filter on location."));
+
+  const cityRegionRe = new RegExp(`\\b[A-Z][a-zA-Z.'-]+(?:\\s+[A-Z][a-zA-Z.'-]+){0,2},\\s*(?:${REGION_CODES})\\b`);
+  const hasLocation = cityRegionRe.test(head) || /\bremote\b/i.test(head) || COUNTRY_RE.test(head) || GLOBAL_CITIES_RE.test(head);
+  if (!hasLocation) f.push(finding(SEV.MINOR, "no-location", "no city/state, country, or remote statement near the top; recruiters filter on location."));
+
   if (/\b\d{2,5}\s+[A-Z][a-z]+\s+(St|Street|Ave|Avenue|Rd|Road|Blvd|Dr|Drive|Ln|Lane|Way|Ct)\b/.test(head)) f.push(finding(SEV.MINOR, "street-address", "street address present; city and state are enough."));
 
   const nameLine = (paragraphs.find((p) => p.text.trim()) || { text: "" }).text.trim();
@@ -339,13 +420,18 @@ function checkSections(paragraphs, opts) {
 }
 
 function parseDate(s) {
-  s = s.toLowerCase().replace(/\./g, "");
-  if (/present|current|now|today|ongoing/.test(s)) return { y: 9999, m: 12, kind: "present" };
+  s = s.toLowerCase().replace(/\./g, "").trim();
+  if (/^(?:present|current|now|today|ongoing)$/.test(s)) return { y: 9999, m: 12, kind: "present" };
   let m = s.match(/^(\d{1,2})\/((?:19|20)\d{2})$/);
-  if (m) return { y: +m[2], m: +m[1], kind: "month" };
-  m = s.match(new RegExp(`^(${MONTHS})\\s+((?:19|20)\\d{2})$`));
+  if (m) {
+    const month = +m[1];
+    if (month < 1 || month > 12) return null;
+    return { y: +m[2], m: month, kind: "month" };
+  }
+  m = s.match(new RegExp(`^(${MONTHS})\\s+((?:19|20)\\d{2})$`, "i"));
   if (m) {
     const idx = ["jan", "feb", "mar", "apr", "may", "jun", "jul", "aug", "sep", "oct", "nov", "dec"].findIndex((k) => m[1].startsWith(k));
+    if (idx < 0) return null;
     return { y: +m[2], m: idx + 1, kind: "month" };
   }
   m = s.match(/^((?:19|20)\d{2})$/);
@@ -355,17 +441,30 @@ function parseDate(s) {
 
 function checkDates(paragraphs, opts) {
   const f = [];
-  const lines = paragraphs.map((p) => p.text);
+  const headersByIdx = new Map(detectHeaders(paragraphs).map((h) => [h.index, h.kind]));
   const ranges = [];
   const seps = new Set();
   const presentWords = new Set();
-  for (const line of lines) {
+
+  let inEducation = false;
+  for (let i = 0; i < paragraphs.length; i++) {
+    const kind = headersByIdx.get(i);
+    if (kind === "education") inEducation = true;
+    else if (kind && kind !== "other") inEducation = false;
+
+    const line = paragraphs[i].text;
+    const isExpectedGrad = inEducation || /\b(expected|anticipated|projected)\b/i.test(line);
+
     for (const m of line.matchAll(dateRangeRe())) {
-      const a = parseDate(m[1]); const b = parseDate(m[2]);
+      const a = parseDate(m[1]);
+      const b = parseDate(m[2]);
       if (!a || !b) continue;
-      ranges.push({ line, a, b });
-      const sep = m[0].match(/\s*(-|–|—|to|through)\s*/)[1];
-      seps.add(sep === "–" ? "en dash" : sep === "—" ? "em dash" : sep === "-" ? "hyphen" : sep);
+      ranges.push({ line, a, b, isExpectedGrad });
+      const sepMatch = m[0].match(/\s*(-|–|—|to|through)\s*/i);
+      if (sepMatch) {
+        const sep = sepMatch[1].toLowerCase();
+        seps.add(sep === "–" ? "en dash" : sep === "—" ? "em dash" : sep === "-" ? "hyphen" : sep);
+      }
       if (b.kind === "present") presentWords.add(m[2].toLowerCase());
     }
   }
@@ -379,7 +478,10 @@ function checkDates(paragraphs, opts) {
   if (presentWords.size > 1) f.push(finding(SEV.MINOR, "mixed-present", `mixed "${[...presentWords].join('" / "')}"; pick one.`));
 
   const now = new Date();
-  const future = ranges.filter((r) => (r.a.y > now.getFullYear()) || (r.b.kind !== "present" && (r.b.y > now.getFullYear() || (r.b.y === now.getFullYear() && r.b.m && r.b.m > now.getMonth() + 1))));
+  const curY = now.getFullYear();
+  const curM = now.getMonth() + 1;
+  const isFutureDate = (d) => d.kind !== "present" && (d.y > curY || (d.y === curY && d.m && d.m > curM));
+  const future = ranges.filter((r) => !r.isExpectedGrad && (isFutureDate(r.a) || isFutureDate(r.b)));
   if (future.length) f.push(finding(SEV.BLOCKER, "future-date", "a date is in the future; fix the typo.", future.map((r) => r.line)));
 
   const reversed = ranges.filter((r) => r.b.kind !== "present" && (r.b.y < r.a.y || (r.b.y === r.a.y && r.a.m && r.b.m && r.b.m < r.a.m)));
@@ -387,7 +489,7 @@ function checkDates(paragraphs, opts) {
 
   // Gap scan on the timeline (union of ranges), conservative thresholds.
   const toIdx = (d, end) => d.y * 12 + (d.m || (end ? 12 : 1));
-  const sorted = ranges.filter((r) => r.a.y < 9999).map((r) => ({ s: toIdx(r.a, false), e: r.b.kind === "present" ? now.getFullYear() * 12 + now.getMonth() + 1 : toIdx(r.b, true), line: r.line })).sort((x, y) => x.s - y.s);
+  const sorted = ranges.filter((r) => r.a.y < 9999).map((r) => ({ s: toIdx(r.a, false), e: r.b.kind === "present" ? curY * 12 + curM : toIdx(r.b, true), line: r.line })).sort((x, y) => x.s - y.s);
   let reach = -Infinity; const gaps = [];
   for (const r of sorted) {
     if (reach !== -Infinity && r.s - reach > (kinds.has("month") ? 7 : 12)) gaps.push(`${Math.round((r.s - reach) / 12 * 10) / 10} yr gap before: ${r.line}`);
@@ -395,12 +497,10 @@ function checkDates(paragraphs, opts) {
   }
   if (gaps.length) f.push(finding(SEV.INFO, "timeline-gap", "gap on the timeline; add a neutral one-line label if it will be asked about (do not fudge dates).", gaps));
 
-  const order = sorted.map((r) => r.s);
   // Reverse chronological within the experience block is expected; reading order should mostly descend.
   let ascendingPairs = 0;
   for (let i = 1; i < ranges.length; i++) if (toIdx(ranges[i].a, false) > toIdx(ranges[i - 1].a, false)) ascendingPairs++;
   if (ranges.length >= 3 && ascendingPairs > ranges.length / 2) f.push(finding(SEV.INFO, "chronology", "roles appear in ascending date order; reverse-chronological (or relevance-first with clear dates) is expected."));
-  void order;
   return f;
 }
 
@@ -411,6 +511,161 @@ function checkFederal(text) {
   if (!/\d{2}\/(?:19|20)\d{2}\s*(?:-|–|to)\s*(?:\d{2}\/(?:19|20)\d{2}|present)/i.test(text)) f.push(finding(SEV.MAJOR, "federal-date-format", "OPM shows dates as MM/YYYY – MM/YYYY (e.g., 05/2019 – 08/2022); use that format for every role."));
   if (/\bGS-?\d{1,2}\b/i.test(text) === false && /federal|department of|agency|u\.s\. (army|navy|air force|government)/i.test(text)) f.push(finding(SEV.MINOR, "federal-grade", "list series and grade (e.g., GS-0343-12) for any federal positions held."));
   if (/supervisor|may (we|i) contact|salary:/i.test(text)) f.push(finding(SEV.INFO, "federal-legacy-fields", "supervisor contact and salary are no longer in OPM's field list; keep only if the announcement asks, they cost page budget."));
+  return f;
+}
+
+// ------------------------------------------------------------------
+// Phase 5 blinding
+// ------------------------------------------------------------------
+
+function blindResumeText(paragraphs) {
+  const headers = detectHeaders(paragraphs);
+  const firstSectionIdx = headers.find((h) => h.kind !== "other")?.index ?? Math.min(8, paragraphs.length);
+
+  let replacedName = false;
+  const out = [];
+
+  for (let i = 0; i < paragraphs.length; i++) {
+    const p = paragraphs[i];
+    const trimmed = p.text.trim();
+
+    if (!trimmed) {
+      out.push("");
+      continue;
+    }
+
+    // Replace candidate name header (skip an optional "Resume"/"CV" title line if it's on line 0).
+    if (!replacedName && !p.isBullet && i < firstSectionIdx) {
+      if (/^(resume|curriculum vitae|cv)$/i.test(trimmed)) continue;
+      out.push("Candidate");
+      replacedName = true;
+      continue;
+    }
+
+    const hasEmail = /[\w.+-]+@[\w-]+\.[\w.-]+/.test(trimmed);
+    const hasPhone = hasPhoneNumber(trimmed);
+    const hasSocial = /\b(?:linkedin\.com|github\.com)\b/i.test(trimmed);
+    const hasStreet = /\b\d{2,5}\s+[A-Z][a-z]+\s+(St|Street|Ave|Avenue|Rd|Road|Blvd|Dr|Drive|Ln|Lane|Way|Ct)\b/i.test(trimmed);
+    const hasUrl = /https?:\/\/|www\.|\.[a-z]{2,}\b/i.test(trimmed);
+
+    // Strip contact lines in the header block (or email/phone/street contact lines anywhere).
+    if (!p.isBullet && (hasEmail || hasPhone || hasStreet || (i < firstSectionIdx && (hasSocial || hasUrl)))) {
+      continue;
+    }
+
+    out.push(p.isBullet ? "• " + p.text : p.text);
+  }
+
+  return out.join("\n").replace(/\n{3,}/g, "\n\n").trim();
+}
+
+// ------------------------------------------------------------------
+// Evidence ledger provenance linter
+// ------------------------------------------------------------------
+
+function parseLedger(ledgerPath) {
+  const raw = fs.readFileSync(ledgerPath, "utf8");
+  const rows = new Map();
+  let colMap = null;
+
+  for (const line of raw.split(/\r?\n/)) {
+    const trimmed = line.trim();
+    if (!trimmed.startsWith("|")) {
+      colMap = null;
+      // Fallback for non-table lines: e.g. "- E1: fact ..." or "E1 | fact | ..."
+      const plain = trimmed.match(/^(?:[-*]\s+)?(?:\*\*)?(E\d+)(?:\*\*)?[:\s]+(.+)$/i);
+      if (plain) {
+        const id = plain[1].toUpperCase();
+        const body = plain[2];
+        rows.set(id, {
+          id,
+          fact: body,
+          kind: "",
+          confidence: /\binferred\b/i.test(body) ? "inferred" : "stated",
+          basis: /\bunmeasured\b/i.test(body) ? "unmeasured" : "",
+        });
+      }
+      continue;
+    }
+
+    const cells = trimmed.replace(/^\|/, "").replace(/\|$/, "").split("|").map((c) => c.trim());
+    if (cells.every((c) => /^:?-{2,}:?$/.test(c))) continue;
+
+    if (cells.some((c) => /^id$/i.test(c))) {
+      colMap = {};
+      cells.forEach((c, idx) => { colMap[c.toLowerCase()] = idx; });
+      continue;
+    }
+
+    const idIdx = colMap && colMap.id !== undefined ? colMap.id : 0;
+    const idRaw = (cells[idIdx] || "").replace(/[\[\]*`]/g, "").trim();
+    if (!/^E\d+$/i.test(idRaw)) continue;
+
+    const id = idRaw.toUpperCase();
+    const get = (name, fallbackIdx) => {
+      const idx = colMap && colMap[name] !== undefined ? colMap[name] : fallbackIdx;
+      return idx !== undefined && idx < cells.length ? cells[idx] : "";
+    };
+    rows.set(id, {
+      id,
+      fact: get("fact", 1),
+      source: get("source", 2),
+      kind: get("kind", colMap ? undefined : (cells.length >= 7 ? 4 : 3)).toLowerCase(),
+      confidence: get("confidence", colMap ? undefined : (cells.length >= 7 ? 5 : 4)).toLowerCase(),
+      basis: get("basis", colMap ? undefined : (cells.length >= 7 ? 6 : 5)),
+    });
+  }
+  return rows;
+}
+
+function checkLedger(paragraphs, ledgerPath) {
+  const f = [];
+  const ledger = parseLedger(ledgerPath);
+  const bullets = paragraphs.filter((p) => p.isBullet && p.text.trim());
+
+  const unknownHits = [];
+  const ungroundedHits = [];
+  let citedBullets = 0;
+
+  for (const b of bullets) {
+    const t = b.text.trim();
+    const citedIds = [];
+    for (const m of t.matchAll(/\[([^\]]*?\bE\d+\b[^\]]*)\]/gi)) {
+      for (const idMatch of m[1].matchAll(/\b(E\d+)\b/gi)) {
+        citedIds.push(idMatch[1].toUpperCase());
+      }
+    }
+    if (!citedIds.length) continue;
+    citedBullets++;
+
+    const unknown = citedIds.filter((id) => !ledger.has(id));
+    if (unknown.length) {
+      unknownHits.push(`${t} (unknown: ${unknown.join(", ")})`);
+    }
+
+    if (METRIC_RE.test(t)) {
+      const badRows = citedIds
+        .map((id) => ledger.get(id))
+        .filter(Boolean)
+        .filter((row) =>
+          /\bunmeasured\b/i.test(row.basis) ||
+          /^inferred\b/i.test(row.confidence) ||
+          (row.kind === "metric" && !row.basis.trim())
+        );
+      if (badRows.length) {
+        const reasons = badRows.map((r) => `${r.id}:${/\bunmeasured\b/i.test(r.basis) ? "unmeasured" : /^inferred\b/i.test(r.confidence) ? "inferred" : "missing-basis"}`);
+        ungroundedHits.push(`${t} (${reasons.join(", ")})`);
+      }
+    }
+  }
+
+  if (unknownHits.length) {
+    f.push(finding(SEV.BLOCKER, "ledger-unknown-id", "bullet cites evidence-ledger ID(s) missing from ledger.", unknownHits));
+  }
+  if (ungroundedHits.length) {
+    f.push(finding(SEV.MAJOR, "ledger-ungrounded-metric", "quantified bullet cites an unmeasured or inferred ledger row; remove the number or record its measurement basis.", ungroundedHits));
+  }
+  f.push(finding(SEV.INFO, "ledger-coverage", `parsed ${ledger.size} ledger row(s); checked ${citedBullets} bullet(s) with [E#] citations.`));
   return f;
 }
 
@@ -432,8 +687,7 @@ function estimatePages(paragraphs, structure) {
   const textH = ph - m.top - m.bottom;
   // Calibrated against LibreOffice renders of the bundled template: ~16 chars per inch at 10pt
   // (Calibri-class fonts), and ~1.7x the font size per rendered line once paragraph spacing,
-  // section-header spacing, and bullet gaps are averaged in. Other templates will differ; that is
-  // why this is labeled an estimate and why LibreOffice is used whenever it is available.
+  // section-header spacing, and bullet gaps are averaged in.
   const charsPerLine = Math.floor(textW * (160 / bodyPt));
   const lineHeightIn = (bodyPt * 1.7) / 72;
   const linesPerPage = Math.floor(textH / lineHeightIn);
@@ -451,11 +705,20 @@ function estimatePages(paragraphs, structure) {
 }
 
 function measurePages(file, opts) {
+  if (opts.pdf) {
+    const pages = pdfPageCount(opts.pdf);
+    return pages ? { value: pages, method: "libreoffice" } : { error: "could not count pages in the rendered pdf" };
+  }
   if (opts.noRender || !/\.docx$/i.test(file)) return null;
-  const r = renderPdf(file, null, 15000);
-  if (r.error) return { error: r.error };
-  const pages = pdfPageCount(r.pdf);
-  return pages ? { value: pages, method: "libreoffice", pdf: r.pdf } : { error: "could not count pages in the rendered pdf" };
+  const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), "resume-check-pdf-"));
+  try {
+    const r = renderPdf(file, tmpDir, 15000);
+    if (r.error) return { error: r.error };
+    const pages = pdfPageCount(r.pdf);
+    return pages ? { value: pages, method: "libreoffice" } : { error: "could not count pages in the rendered pdf" };
+  } finally {
+    fs.rmSync(tmpDir, { recursive: true, force: true });
+  }
 }
 
 // ------------------------------------------------------------------
@@ -534,7 +797,6 @@ function checkKeywords(resumeText, jdText, must) {
   const resumeTokens = tokenize(resumeText);
   const grams = ngramSet(resumeTokens, 4);
   const lowerResume = resumeText.toLowerCase();
-  const escapeRe = (x) => x.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
   const boundaryHas = (phrase) => new RegExp(`(^|[^a-z0-9])${escapeRe(phrase.toLowerCase())}([^a-z0-9]|$)`).test(lowerResume);
   const present = (stemPhrase, surfacePhrase) => {
     if (grams.has(stemPhrase) || grams.has(stemPhrase.replace(/\s+/g, ""))) return true;
@@ -577,31 +839,92 @@ function checkKeywords(resumeText, jdText, must) {
 // Main
 // ------------------------------------------------------------------
 
+const USAGE = [
+  "usage: node resume-check.js <resume.docx|.txt|.md> [options]",
+  "",
+  "options:",
+  "  --jd <file>              job description text; enables keyword coverage",
+  "  --must \"a,b,c\"           terms that must appear (hard requirements); MAJOR if absent",
+  "  --target-pages <n>       page budget (default 2; use 1 for new grads)",
+  "  --profile <name>         standard (default) | federal",
+  "  --paper <letter|a4|any>  expected paper size (default letter)",
+  "  --text <out.txt>         also write the ATS-extracted plain text",
+  "  --blind <out.txt>        write a Phase 5 blinded plain-text copy",
+  "  --ledger <path>          lint [E#] bullet citations against ledger.md",
+  "  --pdf <file.pdf>         use a pre-rendered PDF for exact page count",
+  "  --json                   machine-readable report on stdout",
+  "  --strict                 MAJOR findings also fail the run",
+  "  --no-render              skip the LibreOffice page count (estimate only)",
+  "  --help, -h               show this help",
+].join("\n");
+
 function parseArgs(argv) {
-  const opts = { file: null, jd: null, must: [], targetPages: 2, profile: "standard", paper: "letter", text: null, json: false, strict: false, noRender: false };
+  const opts = {
+    file: null, jd: null, must: [], targetPages: 2, profile: "standard",
+    paper: "letter", text: null, blind: null, ledger: null, pdf: null,
+    json: false, strict: false, noRender: false,
+  };
   for (let i = 0; i < argv.length; i++) {
     const a = argv[i];
-    const next = () => argv[++i];
-    if (a === "--jd") opts.jd = next();
+    const next = () => {
+      if (i + 1 >= argv.length || argv[i + 1].startsWith("--")) {
+        console.error(`missing value for ${a}`);
+        process.exit(2);
+      }
+      return argv[++i];
+    };
+    if (a === "--help" || a === "-h") {
+      console.log(USAGE);
+      process.exit(0);
+    } else if (a === "--jd") opts.jd = next();
     else if (a === "--must") opts.must = next().split(",").map((s) => s.trim()).filter(Boolean);
-    else if (a === "--target-pages") opts.targetPages = Number(next());
-    else if (a === "--profile") opts.profile = next();
-    else if (a === "--paper") opts.paper = next();
-    else if (a === "--text") opts.text = next();
+    else if (a === "--target-pages") {
+      const n = Number(next());
+      if (!Number.isInteger(n) || n < 1) {
+        console.error("invalid --target-pages: expected a positive integer");
+        process.exit(2);
+      }
+      opts.targetPages = n;
+    } else if (a === "--profile") {
+      opts.profile = next();
+      if (!["standard", "federal"].includes(opts.profile)) {
+        console.error(`invalid --profile "${opts.profile}": expected standard or federal`);
+        process.exit(2);
+      }
+    } else if (a === "--paper") {
+      opts.paper = next();
+      if (!["letter", "a4", "any"].includes(opts.paper)) {
+        console.error(`invalid --paper "${opts.paper}": expected letter, a4, or any`);
+        process.exit(2);
+      }
+    } else if (a === "--text") opts.text = next();
+    else if (a === "--blind") opts.blind = next();
+    else if (a === "--ledger") opts.ledger = next();
+    else if (a === "--pdf") opts.pdf = next();
     else if (a === "--json") opts.json = true;
     else if (a === "--strict") opts.strict = true;
     else if (a === "--no-render") opts.noRender = true;
-    else if (a.startsWith("--")) { console.error(`unknown option ${a}`); process.exit(2); }
+    else if (a.startsWith("-")) { console.error(`unknown option ${a}`); process.exit(2); }
     else opts.file = a;
   }
-  if (!opts.file) { console.error("usage: node resume-check.js <resume.docx|.txt|.md> [--jd jd.txt] [--must a,b] [--target-pages n] [--profile standard|federal] [--paper letter|a4|any] [--text out.txt] [--json] [--strict] [--no-render]"); process.exit(2); }
+  if (!opts.file) {
+    console.error(USAGE);
+    process.exit(2);
+  }
   if (opts.profile === "federal") opts.targetPages = Math.min(opts.targetPages, 2);
   return opts;
 }
 
 function run(opts) {
   const { text, paragraphs, structure } = readAny(opts.file);
-  if (opts.text) fs.writeFileSync(opts.text, text + "\n");
+  if (opts.text) {
+    fs.mkdirSync(path.dirname(path.resolve(opts.text)), { recursive: true });
+    fs.writeFileSync(opts.text, text + "\n");
+  }
+  if (opts.blind) {
+    fs.mkdirSync(path.dirname(path.resolve(opts.blind)), { recursive: true });
+    fs.writeFileSync(opts.blind, blindResumeText(paragraphs) + "\n");
+  }
 
   const findings = [
     ...checkStructure(structure, opts),
@@ -612,6 +935,7 @@ function run(opts) {
     ...checkDates(paragraphs, opts),
   ];
   if (opts.profile === "federal") findings.push(...checkFederal(text));
+  if (opts.ledger) findings.push(...checkLedger(paragraphs, opts.ledger));
 
   const measured = measurePages(opts.file, opts);
   const pages = measured && measured.value ? measured : estimatePages(paragraphs, structure);
@@ -663,4 +987,4 @@ if (require.main === module) {
   process.exitCode = report.failed ? 1 : 0; // not process.exit(): piped stdout is async on macOS and would truncate
 }
 
-module.exports = { run };
+module.exports = { run, parseArgs, blindResumeText, parseLedger, hasPhoneNumber };

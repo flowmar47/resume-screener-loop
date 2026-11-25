@@ -42,7 +42,7 @@ const CONTACT_LINE_2 = [
 const ROLE_1_HEADER = {
   title: "Most Recent Title",
   org: "Most Recent Company",
-  dates: "2022 – Present",
+  dates: "Jan 2022 – Present",
 };
 
 // Variant A: customer-facing framing. Trailing comments hold the ledger ids each bullet draws on.
@@ -70,7 +70,7 @@ const ROLE_1_BULLETS_PROGRAM = [
 const ROLE_2_HEADER = {
   title: "Earlier Title",
   org: "Earlier Company",
-  dates: "2018 – 2022",
+  dates: "Jun 2018 – Jan 2022",
 };
 
 const ROLE_2_BULLETS_FULL = [

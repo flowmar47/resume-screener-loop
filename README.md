@@ -58,13 +58,16 @@ The skill asks for missing material, reports the fit tier with its gaps and ques
 
 ```bash
 node scripts/resume-check.js Resume.docx --jd jd.txt --must "Python,Kubernetes" --text Resume.txt
+node scripts/resume-check.js Resume.docx --blind Resume_blinded.txt --ledger work/ledger.md
 node scripts/resume-check.js Resume.docx --profile federal        # OPM two-page rule, MM/YYYY dates, hours per week
 node scripts/resume-check.js resume.md --target-pages 1           # new grad
+node scripts/resume-check.js --help                               # all options
 node scripts/docx-text.js Resume.docx                             # what a parser sees
 node scripts/build-resume.js --jd jd.txt --preview                # run every build_*.js here, then check each output
+npm test                                                          # run the zero-dependency test suite
 ```
 
-Exit code 0 means no blockers. The keyword section is a diagnostic list for judgment, not a score; no employer system publishes one. Page counts are exact when LibreOffice is installed and an estimate otherwise (add `--no-render` to skip the render).
+Exit code 0 means no blockers. Use `--blind <out.txt>` to generate a Phase 5 blinded copy (`Candidate` header, contact lines stripped) and `--ledger <path>` to verify `[E#]` bullet citations against `ledger.md`. The keyword section is a diagnostic list for judgment, not a score; no employer system publishes one. Page counts are exact when LibreOffice is installed and an estimate otherwise (add `--no-render` to skip the render).
 
 ## Repository layout
 

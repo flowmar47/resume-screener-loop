@@ -11,14 +11,16 @@
  *   - No headers/footers (ATS-safe)
  *   - Bullet lists use built-in numbering
  *
- * Override the defaults at the top of this file or by passing options to buildDoc().
+ * Override the defaults at the top of this file, by passing options to
+ * buildDoc(children, options) / roleHeader(..., options), or via createHelpers(options).
  */
 
 const {
   Document, Packer, Paragraph, TextRun, ExternalHyperlink,
-  AlignmentType, BorderStyle, TabStopType, TabStopPosition, LevelFormat,
+  AlignmentType, BorderStyle, TabStopType, LevelFormat,
 } = require("docx");
 const fs = require("fs");
+const path = require("path");
 
 // ============================================================
 // Defaults, override as needed
@@ -31,11 +33,54 @@ const SECTION_SIZE = 22; // 11pt
 const NAME_SIZE = 44;    // 22pt
 const PAGE_MARGIN_TWIPS = 1080; // 0.75 inch
 
+const PAPER_SIZES = {
+  letter: { width: 12240, height: 15840 }, // 8.5 x 11 in
+  a4: { width: 11906, height: 16838 },     // 210 x 297 mm
+};
+
+function resolveMargins(margins) {
+  if (typeof margins === "number") {
+    return { top: margins, right: margins, bottom: margins, left: margins };
+  }
+  if (margins && typeof margins === "object") {
+    return {
+      top: margins.top ?? PAGE_MARGIN_TWIPS,
+      right: margins.right ?? PAGE_MARGIN_TWIPS,
+      bottom: margins.bottom ?? PAGE_MARGIN_TWIPS,
+      left: margins.left ?? PAGE_MARGIN_TWIPS,
+    };
+  }
+  return {
+    top: PAGE_MARGIN_TWIPS,
+    right: PAGE_MARGIN_TWIPS,
+    bottom: PAGE_MARGIN_TWIPS,
+    left: PAGE_MARGIN_TWIPS,
+  };
+}
+
+function resolveDocOptions(options = {}) {
+  const paperKey = String(options.paper || "letter").toLowerCase();
+  const size = PAPER_SIZES[paperKey];
+  if (!size) {
+    throw new Error(`unsupported paper size "${options.paper}"; expected "letter" or "a4"`);
+  }
+  const margin = resolveMargins(options.margins);
+  const font = options.font || FONT;
+  const accent = String(options.accent || ACCENT).replace(/^#/, "");
+  const rightTab = size.width - margin.left - margin.right;
+  return { paper: paperKey, size: { ...size }, margin, font, accent, rightTab };
+}
+
+function rightTabPosition(options = {}) {
+  return resolveDocOptions(options).rightTab;
+}
+
 // ============================================================
 // Headline + contact
 // ============================================================
 
-function name(text) {
+function name(text, options = {}) {
+  const { font } = resolveDocOptions(options);
   return new Paragraph({
     alignment: AlignmentType.CENTER,
     spacing: { after: 80 },
@@ -44,17 +89,18 @@ function name(text) {
         text,
         bold: true,
         size: NAME_SIZE,
-        font: FONT,
+        font,
       }),
     ],
   });
 }
 
-function contact(parts) {
+function contact(parts, options = {}) {
+  const { font, accent } = resolveDocOptions(options);
   // parts is an array of strings or {link, text} objects
   const runs = parts.map((p) => {
     if (typeof p === "string") {
-      return new TextRun({ text: p, size: BODY_SIZE, font: FONT });
+      return new TextRun({ text: p, size: BODY_SIZE, font });
     }
     return new ExternalHyperlink({
       link: p.link,
@@ -62,8 +108,8 @@ function contact(parts) {
         new TextRun({
           text: p.text,
           size: BODY_SIZE,
-          font: FONT,
-          color: ACCENT,
+          font,
+          color: accent,
         }),
       ],
     });
@@ -81,7 +127,8 @@ function contact(parts) {
 // Use only when the ledger supports the title (recruiters scan for it).
 // ============================================================
 
-function headline(text) {
+function headline(text, options = {}) {
+  const { font, accent } = resolveDocOptions(options);
   return new Paragraph({
     alignment: AlignmentType.CENTER,
     spacing: { before: 40, after: 120 },
@@ -90,8 +137,8 @@ function headline(text) {
         text,
         bold: true,
         size: SECTION_SIZE,
-        font: FONT,
-        color: ACCENT,
+        font,
+        color: accent,
       }),
     ],
   });
@@ -101,12 +148,13 @@ function headline(text) {
 // Section header with bottom border
 // ============================================================
 
-function sectionHeader(text) {
+function sectionHeader(text, options = {}) {
+  const { font, accent } = resolveDocOptions(options);
   return new Paragraph({
     spacing: { before: 200, after: 80 },
     border: {
       bottom: {
-        color: ACCENT,
+        color: accent,
         space: 1,
         style: BorderStyle.SINGLE,
         size: 6,
@@ -117,8 +165,8 @@ function sectionHeader(text) {
         text: text.toUpperCase(),
         bold: true,
         size: SECTION_SIZE,
-        font: FONT,
-        color: ACCENT,
+        font,
+        color: accent,
       }),
     ],
   });
@@ -128,11 +176,12 @@ function sectionHeader(text) {
 // Summary paragraph
 // ============================================================
 
-function summary(text) {
+function summary(text, options = {}) {
+  const { font } = resolveDocOptions(options);
   return new Paragraph({
     spacing: { after: 120, line: 276 },
     children: [
-      new TextRun({ text, size: BODY_SIZE, font: FONT }),
+      new TextRun({ text, size: BODY_SIZE, font }),
     ],
   });
 }
@@ -141,29 +190,30 @@ function summary(text) {
 // Role header, title | org (left), dates (right via tab)
 // ============================================================
 
-function roleHeader({ title, org, dates }) {
+function roleHeader({ title, org, dates }, options = {}) {
+  const { font, rightTab } = resolveDocOptions(options);
   return new Paragraph({
     spacing: { before: 140, after: 20 },
     tabStops: [
-      { type: TabStopType.RIGHT, position: TabStopPosition.MAX },
+      { type: TabStopType.RIGHT, position: rightTab },
     ],
     children: [
       new TextRun({
         text: title,
         bold: true,
         size: BODY_SIZE,
-        font: FONT,
+        font,
       }),
       new TextRun({
         text: `  |  ${org}`,
         italics: true,
         size: BODY_SIZE,
-        font: FONT,
+        font,
       }),
       new TextRun({
         text: `\t${dates}`,
         size: BODY_SIZE,
-        font: FONT,
+        font,
       }),
     ],
   });
@@ -173,7 +223,8 @@ function roleHeader({ title, org, dates }) {
 // Optional italic note under a role header
 // ============================================================
 
-function roleNote(text) {
+function roleNote(text, options = {}) {
+  const { font } = resolveDocOptions(options);
   return new Paragraph({
     spacing: { after: 60 },
     children: [
@@ -181,7 +232,7 @@ function roleNote(text) {
         text,
         italics: true,
         size: BODY_SIZE,
-        font: FONT,
+        font,
       }),
     ],
   });
@@ -191,12 +242,13 @@ function roleNote(text) {
 // Bullet
 // ============================================================
 
-function bullet(text) {
+function bullet(text, options = {}) {
+  const { font } = resolveDocOptions(options);
   return new Paragraph({
     numbering: { reference: "bullet-list", level: 0 },
     spacing: { after: 60, line: 264 },
     children: [
-      new TextRun({ text, size: BODY_SIZE, font: FONT }),
+      new TextRun({ text, size: BODY_SIZE, font }),
     ],
   });
 }
@@ -205,7 +257,8 @@ function bullet(text) {
 // Skill line, bold category, then content
 // ============================================================
 
-function skillLine(category, content) {
+function skillLine(category, content, options = {}) {
+  const { font } = resolveDocOptions(options);
   return new Paragraph({
     spacing: { after: 60, line: 264 },
     indent: { left: 0 },
@@ -214,12 +267,12 @@ function skillLine(category, content) {
         text: `${category}:  `,
         bold: true,
         size: BODY_SIZE,
-        font: FONT,
+        font,
       }),
       new TextRun({
         text: content,
         size: BODY_SIZE,
-        font: FONT,
+        font,
       }),
     ],
   });
@@ -229,18 +282,19 @@ function skillLine(category, content) {
 // Education line
 // ============================================================
 
-function eduLine({ school, degree, detail }) {
+function eduLine({ school, degree, detail }, options = {}) {
+  const { font } = resolveDocOptions(options);
   const children = [
     new TextRun({
       text: school,
       bold: true,
       size: BODY_SIZE,
-      font: FONT,
+      font,
     }),
     new TextRun({
       text: `  |  ${degree}`,
       size: BODY_SIZE,
-      font: FONT,
+      font,
     }),
   ];
   if (detail) {
@@ -249,7 +303,7 @@ function eduLine({ school, degree, detail }) {
         text: `  |  ${detail}`,
         italics: true,
         size: BODY_SIZE,
-        font: FONT,
+        font,
       })
     );
   }
@@ -263,13 +317,14 @@ function eduLine({ school, degree, detail }) {
 // Build document
 // ============================================================
 
-function buildDoc(children) {
+function buildDoc(children, options = {}) {
+  const { size, margin, font } = resolveDocOptions(options);
   return new Document({
     creator: "resume-screener-loop",
     styles: {
       default: {
         document: {
-          run: { font: FONT, size: BODY_SIZE },
+          run: { font, size: BODY_SIZE },
         },
       },
     },
@@ -297,13 +352,8 @@ function buildDoc(children) {
       {
         properties: {
           page: {
-            size: { width: 12240, height: 15840 }, // US Letter in twips; A4 is 11906 x 16838
-            margin: {
-              top: PAGE_MARGIN_TWIPS,
-              right: PAGE_MARGIN_TWIPS,
-              bottom: PAGE_MARGIN_TWIPS,
-              left: PAGE_MARGIN_TWIPS,
-            },
+            size,
+            margin,
           },
         },
         children,
@@ -312,13 +362,37 @@ function buildDoc(children) {
   });
 }
 
+function createHelpers(defaultOptions = {}) {
+  const merge = (opts) => ({ ...defaultOptions, ...(opts || {}) });
+  return {
+    name: (text, opts) => name(text, merge(opts)),
+    contact: (parts, opts) => contact(parts, merge(opts)),
+    headline: (text, opts) => headline(text, merge(opts)),
+    sectionHeader: (text, opts) => sectionHeader(text, merge(opts)),
+    summary: (text, opts) => summary(text, merge(opts)),
+    roleHeader: (spec, opts) => roleHeader(spec, merge(opts)),
+    roleNote: (text, opts) => roleNote(text, merge(opts)),
+    bullet: (text, opts) => bullet(text, merge(opts)),
+    skillLine: (category, content, opts) => skillLine(category, content, merge(opts)),
+    eduLine: (spec, opts) => eduLine(spec, merge(opts)),
+    buildDoc: (children, opts) => buildDoc(children, merge(opts)),
+    rightTabPosition: (opts) => rightTabPosition(merge(opts)),
+    writeDoc,
+  };
+}
+
 async function writeDoc(doc, outputPath) {
+  fs.mkdirSync(path.dirname(path.resolve(outputPath)), { recursive: true });
   const buffer = await Packer.toBuffer(doc);
   fs.writeFileSync(outputPath, buffer);
   console.log(`Wrote: ${outputPath}`);
 }
 
 module.exports = {
+  PAPER_SIZES,
+  resolveDocOptions,
+  rightTabPosition,
+  createHelpers,
   name,
   contact,
   headline,
