@@ -1,5 +1,7 @@
 # resume-screener-loop
 
+[![CI](https://github.com/flowmar47/resume-screener-loop/actions/workflows/test.yml/badge.svg)](https://github.com/flowmar47/resume-screener-loop/actions/workflows/test.yml) [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
+
 An agent skill that tailors a resume to a specific job, then attacks the draft the way the company's screening pipeline will, and revises until it survives. Works in any coding agent that reads `SKILL.md` (Claude Code, Codex CLI, Gemini CLI, Cursor, Copilot CLI, OpenCode, and others).
 
 Most tailoring tools keyword-match against the JD and hand back a score. Real pipelines do something else: a parser extracts text, knockout questions filter, a recruiter scans for seven seconds, a hiring manager reads for depth, and an interviewer asks "how did you measure that?" This skill simulates each of those readers, and it refuses to write anything it cannot trace to the candidate's own evidence.
